@@ -1,0 +1,19 @@
+#
+# $Id$
+#
+
+The SuSE Proxy Suite has been designed and programmed by:
+
+Jens-Gero Boehm <jens-gero.boehm@suse.de>
+	Programming support
+
+Pieter Hollants <pieter.hollants@suse.de>
+	Documentation
+
+Marius Tomaschewski <mt@suse.de>
+	Test environment, programming
+
+Volker Wiegand <volker.wiegand@suse.de>
+	General program design and programming
+	/proc/net/ftp_proxy interface
+

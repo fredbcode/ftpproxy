@@ -1,0 +1,252 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.9">
+ <TITLE>The FTP-Proxy White Paper: Installation</TITLE>
+ <LINK HREF="ftp-proxy-3.html" REL=next>
+ <LINK HREF="ftp-proxy-1.html" REL=previous>
+ <LINK HREF="ftp-proxy.html#toc2" REL=contents>
+</HEAD>
+<BODY>
+<A HREF="ftp-proxy-3.html">Next</A>
+<A HREF="ftp-proxy-1.html">Previous</A>
+<A HREF="ftp-proxy.html#toc2">Contents</A>
+<HR>
+<H2><A NAME="installation"></A> <A NAME="s2">2. Installation</A></H2>
+
+<P>The following discussion assumes that you have obtained the
+tarball distribution and want to compile and install the FTP-Proxy
+package from ground up.  Let's assume you have received a file named
+<CODE>proxy-suite-x.y.tar.gz</CODE>, where 'x' is the major and 'y'
+is the minor version number.
+<P>
+<OL>
+<LI>Decide where to install and compile the source code.  Say you want
+to install it in <CODE>/usr/src/proxy-suite-x.y</CODE>.  Then do the
+following to unpack the source (assuming the tarball is available
+in the current directory when calling gunzip):
+
+<PRE>
+cd /usr/src
+gunzip -c proxy-suite-x.y.tar.gz | tar xvf -
+</PRE>
+
+
+If you do not have a copy of GZIP, look at the
+<A HREF="ftp://ftp.gnu.org/pub/gnu/gzip/">GNU</A>
+archive or one of its numerous mirrors.  It's free.
+
+<P>
+</LI>
+<LI>After unpacking the source you need to run the <CODE>configure</CODE>
+shell script which performs the customization for you operating
+system and local environment.  This script is based upon the GNU
+AutoConf package.  Change your current directory to be the root of
+the Proxy-Suite:
+
+<PRE>
+cd proxy-suite-x.y
+</PRE>
+
+
+The <CODE>configure</CODE> script understands a number of options
+which control the customization process.  To see a complete list
+of all options simply run:
+
+<PRE>
+./configure --help
+</PRE>
+
+
+The following options are most likely to be involved:
+
+<PRE>
+--prefix=&lt;directory&gt;
+</PRE>
+
+<BLOCKQUOTE>
+This is the root directory for the installation.  If none of the
+other directory related directives further down is also given,
+all files will be installed in subdirectories under this one.
+The default is <CODE>/usr/local/proxy-suite/</CODE>.
+</BLOCKQUOTE>
+
+
+<PRE>
+--exec-prefix=&lt;directory&gt;
+</PRE>
+
+<BLOCKQUOTE>
+A second top level installation directory, this one is used as
+the basis for all executables.  Defaults to the same as PREFIX.
+</BLOCKQUOTE>
+
+
+<PRE>
+--mandir=&lt;directory&gt;
+</PRE>
+
+<BLOCKQUOTE>
+The FTP-Proxy comes with two manual pages:
+<EM>ftp-proxy(8)</EM> for the program
+and <EM>ftp-proxy.conf(5)</EM> for the configuration file format.
+These will be installed under the <CODE>man5</CODE> and <CODE>man8</CODE>
+subdirectories of the given one, or under <CODE>PREFIX/man</CODE> if
+not specified.
+</BLOCKQUOTE>
+
+
+<PRE>
+--sbindir=&lt;directory&gt;
+</PRE>
+
+<BLOCKQUOTE>
+The next directory specifies the location where the
+<CODE>ftp-proxy</CODE> executable itself will be installed.  The
+default is <CODE>EXEC-PREFIX/sbin</CODE> if this option does not
+request otherwise.
+</BLOCKQUOTE>
+
+
+<PRE>
+--sysconfdir=&lt;directory&gt;
+</PRE>
+
+<BLOCKQUOTE>
+The last directory related option (others may be given, but
+have no effect) deals with the <CODE>proxy-suite/ftp-proxy.conf</CODE>
+configuration file.  Again there is a default if the option is
+not provided, <CODE>PREFIX/etc</CODE>.
+Please note that the location of the config file can be selected
+at run time with the <EM>-f</EM> flag, but if the file is
+installed at the default location, this flag is redundant.
+</BLOCKQUOTE>
+
+
+<PRE>
+--enable-debug
+</PRE>
+
+<BLOCKQUOTE>
+This option allows the generation of debugging output and
+is mainly included for evaluation (and development) purposes.
+It is recommended not to specify this option for deployment
+of the FTP-Proxy into production environments.
+</BLOCKQUOTE>
+
+
+<PRE>
+--enable-warnings
+</PRE>
+
+<BLOCKQUOTE>
+If compiling with the GNU GCC compiler, this flag increases
+the warning level.  This is useful to detect programming
+errors or incompatibilities with the target platform.  Our
+recommendation is to enable it anyway.
+</BLOCKQUOTE>
+
+
+<PRE>
+--enable-so-linger
+</PRE>
+
+<BLOCKQUOTE>
+It is strongly recommended to enable this option for all systems.
+Only if the target does have problems with <EM>SO_LINGER</EM>
+handling, it should be disabled.
+</BLOCKQUOTE>
+
+
+<PRE>
+--with-regex[=PATH]
+</PRE>
+
+<BLOCKQUOTE>
+This option is mainly needed to provide the location of the
+POSIX 1002.3 regular expression library if it is not included
+in the standard C library.  Regular expressions are used to
+scan the arguments of the various FTP commands received from
+clients.  If your system does not include the required support,
+you can download the latest version from the
+<A HREF="ftp://ftp.gnu.org/pub/gnu/regex/">GNU</A>
+archive.  Again, it's free.  GNU RegEx is known to work with
+FTP-Proxy.  If the option is not given, regular expression
+support is not installed at all and arguments will not be
+investigated any further.
+</BLOCKQUOTE>
+
+
+<PRE>
+--with-libwrap[=PATH]
+</PRE>
+
+<BLOCKQUOTE>
+If running as a standalone background daemon, FTP-Proxy can be
+instructed to make use of the <EM>TCP Wrapper</EM> library.
+If this is compiled in and enabled in the configuration file,
+the <CODE>/etc/hosts.allow</CODE> and <CODE>/etc/hosts.deny</CODE>
+files will be consulted to decide if a client will be served.
+</BLOCKQUOTE>
+
+
+<PRE>
+--with-libldap[=PATH]
+</PRE>
+
+<BLOCKQUOTE>
+If you want to supply the user specific configuration values
+(not the basic ones) via an LDAP directory, compile in LDAP
+support.  The <CODE>configure</CODE> script can determine without
+further manual intervention whether to use the <EM>OpenLDAP</EM>,
+the <EM>University of Michigan</EM> or the <EM>Netscape</EM>
+version of the API. <EM>OpenLDAP</EM> is the preferred API.
+</BLOCKQUOTE>
+
+
+<PRE>
+--with-crypt[=PATH]
+</PRE>
+
+<BLOCKQUOTE>
+This option enables support for crypted passwords in user
+authentication (curently ldap based only).  See also the
+<CODE>LDAPAuthPWType</CODE> configuration file option.
+</BLOCKQUOTE>
+
+</LI>
+<LI>After <CODE>configure</CODE> has completed successfully, it is now
+time to run <CODE>make</CODE> (GNU make). It will read the
+<CODE>Makefile</CODE> generated by <CODE>configure</CODE> in the previous
+step and perform the compilation process. The program should not
+display any warnings or errors.
+
+<P>
+</LI>
+<LI>When the executables have been generated, a final call to
+<CODE>make install</CODE> will copy the FTP-Proxy files into their
+appropriate places.  Usually root privileges are required in
+order to install the files in their proper places.
+
+<P>
+</LI>
+<LI>Currently, you'll have to modify your system manually so that
+ftp-proxy is run at system bootup or from inetd (depending on
+which mode you choose in the configuration file or command line).
+We provide an sample run level script <CODE>rc.script</CODE> for
+(SuSE) Linux; see also description in <CODE>rc.script.txt</CODE>.
+
+<P>
+</LI>
+<LI>The last step is the configuration of the installed FTP-Proxy;
+see following 
+<A HREF="ftp-proxy-3.html#config">Configuration</A> section.</LI>
+</OL>
+<P>
+<P>
+<HR>
+<A HREF="ftp-proxy-3.html">Next</A>
+<A HREF="ftp-proxy-1.html">Previous</A>
+<A HREF="ftp-proxy.html#toc2">Contents</A>
+</BODY>
+</HTML>

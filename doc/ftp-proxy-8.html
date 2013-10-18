@@ -1,0 +1,128 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.9">
+ <TITLE>The FTP-Proxy White Paper: Using an LDAP Directory</TITLE>
+ <LINK HREF="ftp-proxy-9.html" REL=next>
+ <LINK HREF="ftp-proxy-7.html" REL=previous>
+ <LINK HREF="ftp-proxy.html#toc8" REL=contents>
+</HEAD>
+<BODY>
+<A HREF="ftp-proxy-9.html">Next</A>
+<A HREF="ftp-proxy-7.html">Previous</A>
+<A HREF="ftp-proxy.html#toc8">Contents</A>
+<HR>
+<H2><A NAME="ldap"></A> <A NAME="s8">8. Using an LDAP Directory</A></H2>
+
+<P>The main option to use an LDAP directory is the <CODE>LDAPServer</CODE>
+configuration option. If given, it specifies the hostname of the
+directory server (optionally followed by port number separated by
+a colon).
+<P>The program will bind the directory using <CODE>LDAPBindDN</CODE>
+(and <CODE>LDAPBindPW</CODE>) and retrive the values having an object
+class of <CODE>LDAPObjectClass</CODE> and identified by the
+<CODE>LDAPIdentifier</CODE>.
+<P>The <EM>LDAPBindDN</EM> and <EM>LDAPBindPW</EM> option defines the
+distinguished name and credentials (password) needed to access the
+data in the directory service.
+It is allowed to include one %s in <EM>LDAPBindDN</EM> - it will be
+replaced with the user name. If <EM>UserAuthMagic</EM> is used, the
+special "authuser" and "authpass" are used, otherwise normal "ftpuser"
+and "ftppass" from USER and PASS ftp commands.
+If no <EM>LDAPBindDN</EM> specified, a annonymous bind will be used.
+<P>Additionally the directory tree root should be specified using
+the <CODE>LDAPBaseDN</CODE> or <CODE>LDAPAuthDN</CODE> option. You can
+also use both options set to differen root's if your profile
+data is stored in a different tree than the authentication data.
+One of both options is mandatory.
+<P>
+<P>
+<UL>
+<LI><EM>LDAP User-Profiles</EM>
+<P>In order to gain more flexibiliy for the user management, the
+user dependent parts of the configuration can also be supplied
+with an LDAP directory.
+<P>The following configuration options will be tryed to retrieve
+from the tree root specified by the <CODE>LDAPBaseDN</CODE> option:
+<PRE>
+ DestinationAddress, DestinationPort, DestinationTransferMode,
+ DestinationMinPort, DestinationMaxPort, ActiveMinDataPort,
+ ActiveMaxDataPort, PassiveMinDataPort, PassiveMaxDataPort,
+ SameAddress, TimeOut, ValidCommands.
+</PRE>
+<P>For example, if your user (USERNAME) dependent configuration
+is stored as <EM>uid=USERNAME,ou=FTPProxy,dc=domain,dc=top</EM>
+in the directory, the setup may be as follows:
+<PRE>
+  LDAPServer      ldap.domain.top:389
+  LDAPBaseDN      ou=FTPProxy,dc=domain,dc=top
+  LDAPIdentifier  uid
+</PRE>
+
+If a non-anonymous bind is needed to access the tree,
+a <EM>LDAPBind</EM> can be specified either to an
+specific user, i.e. "proxyuser":
+<PRE>
+  LDAPBindDN      uid=proxyuser,ou=FTPProxy,dc=domain,dc=top
+</PRE>
+
+or also the user who want to login (ftp-user or auth-user name
+depending on UserAuthMagic):
+<PRE>
+  LDAPBindDN      uid=%s,ou=FTPProxy,dc=domain,dc=top
+</PRE>
+<P>
+<P>
+</LI>
+<LI><EM>User-Authentication</EM>
+<P>Since proxy-suite Version 1.9 the ftp-proxy supports also
+LDAP based user authentication.
+<P>To activate it, you have to set the <CODE>UserAuthType</CODE>
+configuration option to <EM>ldap</EM> and define the
+authentication tree root using the <CODE>LDAPAuthDN</CODE>
+configuration option. If no <CODE>LDAPAuthDN</CODE> option
+is set, <CODE>LDAPBaseDN</CODE> is used instead.
+<P>If you only want to check, if an user is allowed to
+use the ftp-proxy service or not, you can define the
+<CODE>LDAPAuthOKFlag</CODE> option to an attribute name
+and its value, separated with an equal character.
+The program will check, if the value for the given
+attribute exists - the attribute may contain multiple
+values. Example:
+<PRE>
+LDAPAuthOKFlag   AllowedService=ftpProxy
+</PRE>
+.
+<P>Further it is also possible to preform an password
+authentication using the <CODE>LDAPAuthPWAttr</CODE>
+and <CODE>LDAPAuthPWType</CODE> options.
+The <CODE>LDAPAuthPWAttr</CODE> defines the name of the
+password attribute. A common name for this attribute
+is <EM>userPassword</EM>.
+<P>The <CODE>LDAPAuthPWType</CODE> option defined the type
+of the password stored in the directory service.
+Supported password types are <EM>plain</EM> for plain-text
+passwords, <EM>crypt</EM> for crypted passwords and
+<EM>{crypt}</EM> for crypted passwords prefixed with
+a <EM>{crypt}</EM> string (a scheme specification).
+The type may be followed by the number 0-9 of minimal
+allowed passord length, i.e.
+<PRE>
+LDAPAuthPWType   plain
+</PRE>
+
+This definition means, the directory contains plain-text
+password with the default minimal length of at least 5
+characters.
+<P>
+</LI>
+</UL>
+<P>
+<P>
+<P>
+<HR>
+<A HREF="ftp-proxy-9.html">Next</A>
+<A HREF="ftp-proxy-7.html">Previous</A>
+<A HREF="ftp-proxy.html#toc8">Contents</A>
+</BODY>
+</HTML>

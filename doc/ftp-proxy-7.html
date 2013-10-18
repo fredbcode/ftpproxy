@@ -1,0 +1,49 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.9">
+ <TITLE>The FTP-Proxy White Paper: User Authentication</TITLE>
+ <LINK HREF="ftp-proxy-8.html" REL=next>
+ <LINK HREF="ftp-proxy-6.html" REL=previous>
+ <LINK HREF="ftp-proxy.html#toc7" REL=contents>
+</HEAD>
+<BODY>
+<A HREF="ftp-proxy-8.html">Next</A>
+<A HREF="ftp-proxy-6.html">Previous</A>
+<A HREF="ftp-proxy.html#toc7">Contents</A>
+<HR>
+<H2><A NAME="userauth"></A> <A NAME="s7">7. User Authentication</A></H2>
+
+<P>Since proxy-suite Version 1.9 the ftp-proxy supports user
+authentication. To enable it, the <CODE>UserAuthType</CODE>
+configuration option have to be set to the name of the
+mechanism used, i.e. <EM>ldap</EM> (currently the only one).
+<P>For more information on LDAP based authentication, see also
+the 
+<A HREF="ftp-proxy-8.html#ldap">Using an LDAP Directory</A> section.
+<P>Per default, the normal "ftpuser" and "ftppass" from <EM>USER</EM>
+and <EM>PASS</EM> FTP commands are used for the authentication.
+This may be usefull especially in "inbound" mode of the proxy.
+<P>In "outbound" mode, it may be usefull to use an extended enconding
+of an "authuser" and "authpass" additionally to the normal "ftpuser"
+and "ftppass" using the <CODE>UserAuthMagic</CODE> option supported by
+some FTP clients, i.e. <EM>"@auth" for NcFTP, type 5</EM>.
+<P>The <CODE>UserAuthMagic</CODE> configuration variable can be set to
+either <EM>auth@</EM> or <EM>@auth</EM>, where "@" is an encoding
+separator character and can also be set to an different one, i.e.
+to ":", using <EM>auth:</EM> or <EM>:auth</EM>.
+<P>If the "auth" keyword is prepended by the separator character, the
+USER command will be parsed as "ftpuser@authuser" or in combination
+with the <CODE>AllowMagicUser</CODE> as "ftpuser@authuser@host:port"
+and the PASS FTP command as "ftppass@authpass".
+<P>If the "auth" keyword is followed by the separator character,
+the parsing is done in the different order as "authuser@ftpuser".
+<P>
+<P>
+<P>
+<HR>
+<A HREF="ftp-proxy-8.html">Next</A>
+<A HREF="ftp-proxy-6.html">Previous</A>
+<A HREF="ftp-proxy.html#toc7">Contents</A>
+</BODY>
+</HTML>

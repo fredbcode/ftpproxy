@@ -1,0 +1,9 @@
+#
+# Set this to 'yes', if you want to start the FTP-Proxy
+# as Daemon instead via /etc/(x)inetd.conf.
+#
+# Don't forget to set 'ServerType' to 'standalone' in
+# /etc/proxy-suite/ftp-proxy.conf.
+#
+START_FTP_PROXY=no
+

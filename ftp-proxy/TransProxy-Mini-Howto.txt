@@ -1,0 +1,188 @@
+
+$Id: TransProxy-Mini-Howto.txt,v 1.2 2002/05/02 13:12:11 mt Exp $
+
+  SuSE FTP-Proxy transparent proxying
+  Marius Tomaschewski <mt@suse.de>
+
+
+  Transparent proxying support is implemented for Linux ipchains,
+  iptables and BSD ipf/ipnat (http://coombs.anu.edu.au/~avalon/).
+  The BSD implementation is tested on OpenBSD 2.9 and FreeBSD 4.4.
+
+  Note, that the iptables ipchains-wrapper (getsockname hack) does
+        NOT support transparent proxying (see NAT-HOWTO, Sect 4)!
+
+     Feel free to port and test it on other platforms!
+
+
+How it works?
+
+Its very simple: the ip filter of you kernel redirects all packages
+the client sends to the ftp port (21) in "external networks" to the
+proxy and the proxy connects the server the client wanted to go.
+
+Note: you have to enable the transparent proxy or ipnat
+      feature in your kernel or load needed modules.
+
+
+Let's start using an example network configuration:
+
+  internal network - 192.168.1.0/24 (and others)
+         |
+         |
+         |                   interface: intern0, 192.168.1.1
+   Firewall/Gateway + Proxy
+                     |       interface: extern0
+                     |                  NAT-IP  200.200.200.1
+                     |
+                 [Router (NAT)]
+                         |
+                         |
+                  external network
+                 I N T E R N E T (0.0.0.0/0)
+
+
+Note: In the above picture, the proxy has two network interfaces; they
+      are named using "symbolic interface names" intern0 and extern0.
+OF COURSE, you have to replace all occurences of "symbolic interface
+names" used in this text with the proper real interface names as well
+as adopt the IP addresses to match your system/network configuration!!
+
+The real interface names depends on the system you are using and may
+be called like kernel drivers, that used for them. See system manuals
+and the output from "ifconfig -a" and "netstat -rn" to get needed
+informations about interfaces, ip addresses and routing.
+
+i.e. on Linux, the ethernet interfaces have names eth0, eth1, ...;
+on BSD systems, the driver names are used: de0, rl0, ...
+
+
+Respectively to the above network picture, here is a example config
+you can start with:
+
+# grep -v ^# /etc/proxy-suite/ftp-proxy.conf | grep -v ^$
+[-Global-]
+ServerType                   standalone
+LogDestination               daemon
+Listen                       192.168.1.1
+AllowTransProxy              yes
+AllowMagicUser               yes
+UseMagicChar                 %
+PortResetsPasv               yes
+DestinationTransferMode      passive  # see bellow!
+
+
+If you do _not_ set "DestinationTransferMode passive", because you
+want to allow active-ftp transfers between the proxy and ftp-server
+_and_ you have a Router doing NAT/Masquerading behind the proxy
+(between proxy and the ftp-server), you may also need to set the
+TranslatedAddress variable to an (externally used) NAT IP, the proxy
+should use in FTP "PORT" command:
+
+# may be needed in NAT'ed/Masqueraded environments
+#TranslatedAddress           200.200.200.1
+
+If you specifiy "DestinationTransferMode passive" as in the above
+config, no active-ftp are done and the TranslatedAddress variable
+is not needed at all. It is also not needed if the proxy does NAT
+or Masquerading itself (has an official IP) !
+Use TranslatedAddress only, if you really known why it's needed!
+
+
+First, test if the proxy works using the MagicUser feature,
+  "AllowMagic yes"
+ftp-proxy.conf(5) and a connect directly to the proxy:
+
+$ ftp 192.168.1.1
+Connected to proxy.local.
+220 proxy FTP server (Version 1.7.9pre3 - 2001/12/22 12:15:00) ready.
+Name (proxy:you): ftp%ftp.suse.com
+331 Guest login ok, send your complete e-mail address as password.
+Password:
+230 Guest login ok, access restrictions apply.
+Remote system type is UNIX.
+Using binary mode to transfer files.
+ftp> quit
+221 Goodbye.
+
+
+If the proxy works, you can (must not) disable the MagicUser feature
+and setup the redirection rules for your ip-filter... the following
+example rules are the most relevant:
+
+ 1) protect FTP proxy from extern / internet
+ 2) redirect FTP requests from internal network to the proxy
+
+Feel free to use different rules or add other rules as well, but do
+not complain if the redirection doesn't work or a "bad guy" from the
+internet is using your proxy because of broken ip filter setup!
+
+
+ *** iptables  rules ***
+
+ iptables -A INPUT -i extern0 -p tcp -d 192.168.1.1 --dport 21 -j DROP
+
+ iptables -t nat -A PREROUTING -i intern0 -p tcp -d ! 192.168.1.1 \
+                 --dport 21 -j REDIRECT --to-ports 21
+
+
+ *** ipchains  rules ***
+
+ ipchains -A input -i extern0 -d 192.168.1.1 21 -p tcp -j DENY
+
+ ipchains -A input -i intern0 -d ! 192.168.1.1 21 -p tcp -j REDIRECT 21
+
+ Note: because of the method ipchains implements transparent
+       proxying, you should set the "Listen" variable in the
+       ftp-proxy.conf to the internal IP.
+       Otherwise the proxy will spoof yor client using the IP
+       of the server for data transfers (in active-ftp mode)...
+       This may be blocked by other ip-filter (spoofing) rules.
+
+
+ *** BSD ipnat rules ***
+
+ # /etc/ipf.rules - see ipf(8):
+ block in on extern0 proto tcp from any to 192.168.1.1 port = 21
+
+ # /etc/ipnat.rules - see ipnat(8):
+ rdr intern0 0.0.0.0/0 port 21 -> 192.168.1.1 port 21 tcp
+
+ Apply the rules i.e. using:
+   ipf -Fa -f /etc/ipf.rules ; ipnat -CF -f /etc/ipnat.rules
+
+
+Read the manual pages / documentation of the filter tools you
+are using!
+
+
+Now, you should be able to use the ftp-server directly via
+transparent proxy redirection:
+
+$ ftp ftp.suse.com
+Connected to ftp2.suse.com.
+220 proxy FTP server (Version 1.7.9pre3 - 2001/12/22 12:15:00) ready.
+Name (ftp.suse.com:you): ftp
+331 Guest login ok, send your complete e-mail address as password.
+Password:
+230 Guest login ok, access restrictions apply.
+Remote system type is UNIX.
+Using binary mode to transfer files.
+ftp> quit
+221 Goodbye.
+
+
+Take a look on your messages or log files. You may see a message
+from the proxy about a transparent proxy destination (in one line):
+
+   ftp-child[31673]: USER-INF transparent proxy request
+                     to 202.58.118.12:21 from 192.168.1.20
+                        ^^^^^^^^^^^^^         ^^^^^^^^^^^^
+                        ftp-server            ftp-client
+
+If not, double-check your setup!
+
+And sure, feel free to set up a chroot environment, etc...
+
+Don't forget to have fun!
+

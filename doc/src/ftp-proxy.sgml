@@ -1,0 +1,1013 @@
+<!--
+ $Id: ftp-proxy.sgml,v 1.7 2002/05/02 13:05:28 mt Exp $
+
+ FTP-Proxy Documentation (SGML source for use with LinuxDoc DTD)
+
+ Author(s): Jens-Gero Boehm <jens-gero.boehm@suse.de>
+            Pieter Hollants <pieter.hollants@suse.de>
+            Marius Tomaschewski <mt@suse.de>
+            Volker Wiegand <wiegand@suse.de>
+
+ This file is part of the SuSE Proxy Suite
+            See http://proxy-suite.suse.de/
+
+ This program is free software; you can redistribute it and/or
+ modify it under the terms of the GNU General Public License
+ as published by the Free Software Foundation; either version
+ 2 of the License, or (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with this program; if not, write to the
+
+  Free Software Foundation, Inc.
+  59 Temple Place - Suite 330,
+  Boston, MA 02111-1307, USA.
+
+ A history log can be found at the end of this file.
+-->
+
+<!DOCTYPE linuxdoc system>
+
+<article>
+
+<!-- Title information -->
+
+<title>
+The FTP-Proxy White Paper
+</title>
+
+<author>
+The SuSE Proxy-Suite Core Development Team
+</author>
+
+<date>
+$Revision: 1.7 $ ($Date: 2002/05/02 13:05:28 $)
+</date>
+
+<abstract>
+FTP-Proxy is SuSE Proxy-Suite's application-level proxy for FTP
+connections.  It provides support for both active and passive transfers
+and for user-specific configuration directives.  Configuration data
+can be obtained either from a local configuration file or from an
+LDAP directory.
+</abstract>
+
+<!-- Table of contents -->
+<toc>
+
+<!-- Begin of document -->
+
+<!-- ##################################################### -->
+<!-- Introduction -->
+<sect>Introduction
+<label id="introduction">
+
+<p>
+*** Note: this document is work in progress and by no means complete.
+It is included just for the sake of "Release early and often." ***
+
+<p>
+FTP-Proxy is a transparent, application-level proxy server for FTP
+connections, designed to protect FTP servers against attacks based
+on the FTP protocol.
+
+Due to the dual TCP connection nature of the FTP protocol, special
+handling is required to allow secure transfers.  Data connections are
+usually opened by the FTP server (the FTP protocol specification calls
+this "active" transfers) or optionally by the FTP client ("passive"
+transfers).  The data ports to be used are determined dynamically and
+announced as part of the protocol.  This makes it very difficult for
+static packet filters to handle FTP correctly.
+
+Most routers and firewalls know about this procedure when NAT is
+performed.  E.g. Linux provides a special kernel module for FTP (and
+other protocols).  However such code usually only works in "outbound"
+direction, allowing FTP access from the inner network to FTP servers
+on the outer network, but not in the other direction.
+
+This is a design restriction: TCP/IP packets originating from the
+inner network can be marked with special information that allows
+for correct routing of response packets from the outer network.
+For instance, if a WWW client on host 192.168.168.27 on your internal
+network requests a web page from Web server 194.112.123.200, the
+router maintains internal information when it rewrites the headers
+of the request packets.  If a response packet arrives (with a "From"
+address of 194.112.123.200), the router is then able to replace the
+public IP address in the "To" field with the private IP address of
+the appropriate client, in this case 192.168.168.27.
+
+Of course, if a connection originates from the outer network, the
+router does not have this additional information and it can't forward
+incoming IP packets since it has no idea which host on the inner
+network is to be addressed.  One solution could be to enable port
+forwarding on the router (if supported), so that FTP clients on the
+outer network could connect to port X on the router to reach server Y
+on the inner network, however this fails because of the restrictions
+in the FTP protocol outlined above.
+
+A proxy server is an elegant way to circumvent these restrictions,
+but there are other benefits of using FTP-Proxy as well:
+
+<p>
+<itemize>
+
+<item>
+Simple forwarding of all traffic destined for the inner FTP server
+leaves that server nearly as vulnerable as if it had a "direct"
+connection to the outer network (without the firewall in front of it).
+In that case the FTP server would still be open to Denial-of-Service
+and similar attacks on the IP level.
+
+As FTP-Proxy runs on the application level, it doesn't forward
+the original IP packets but only maintains the information within.
+For instance, a packet containing not only a valid FTP command but
+also information to exploit an FTP server's bugs will never reach
+the server because only the FTP command itself is forwarded, within
+a completely new IP packet.
+
+Of course, FTP-Proxy could be subject to an attack itself.  However,
+FTP-Proxy is much less complex than any current FTP server, has been
+designed with great care and performs chroot(), setuid() and setgid()
+to avoid such vulnerability.
+
+<p>
+<item>
+Using a circuit-level proxy server like SOCKS requires that all FTP
+clients support SOCKS.  This seems to be too restrictive.  FTP-Proxy,
+on the other hand, is completely transparent to FTP clients because
+it is fully RFC 959 compliant.
+
+</itemize>
+
+<!-- ##################################################### -->
+<!-- Installation -->
+
+<sect>Installation
+<label id="installation">
+
+<p>
+The following discussion assumes that you have obtained the
+tarball distribution and want to compile and install the FTP-Proxy
+package from ground up.  Let's assume you have received a file named
+<tt>proxy-suite-x.y.tar.gz</tt>, where 'x' is the major and 'y'
+is the minor version number.
+
+<enum>
+<item>
+Decide where to install and compile the source code.  Say you want
+to install it in <tt>/usr/src/proxy-suite-x.y</tt>.  Then do the
+following to unpack the source (assuming the tarball is available
+in the current directory when calling gunzip):
+
+<verb>
+cd /usr/src
+gunzip -c proxy-suite-x.y.tar.gz | tar xvf -
+</verb>
+
+If you do not have a copy of GZIP, look at the
+<htmlurl url="ftp://ftp.gnu.org/pub/gnu/gzip/" name="GNU">
+archive or one of its numerous mirrors.  It's free.
+
+<p>
+<item>
+After unpacking the source you need to run the <tt>configure</tt>
+shell script which performs the customization for you operating
+system and local environment.  This script is based upon the GNU
+AutoConf package.  Change your current directory to be the root of
+the Proxy-Suite:
+
+<verb>
+cd proxy-suite-x.y
+</verb>
+
+The <tt>configure</tt> script understands a number of options
+which control the customization process.  To see a complete list
+of all options simply run:
+
+<verb>
+./configure --help
+</verb>
+
+The following options are most likely to be involved:
+
+<verb>
+--prefix=&lt;directory&gt;
+</verb>
+<quote>
+This is the root directory for the installation.  If none of the
+other directory related directives further down is also given,
+all files will be installed in subdirectories under this one.
+The default is <tt>/usr/local/proxy-suite/</tt>.
+</quote>
+
+<verb>
+--exec-prefix=&lt;directory&gt;
+</verb>
+<quote>
+A second top level installation directory, this one is used as
+the basis for all executables.  Defaults to the same as PREFIX.
+</quote>
+
+<verb>
+--mandir=&lt;directory&gt;
+</verb>
+<quote>
+The FTP-Proxy comes with two manual pages:
+<em>ftp-proxy(8)</em> for the program
+and <em>ftp-proxy.conf(5)</em> for the configuration file format.
+These will be installed under the <tt>man5</tt> and <tt>man8</tt>
+subdirectories of the given one, or under <tt>PREFIX/man</tt> if
+not specified.
+</quote>
+
+<verb>
+--sbindir=&lt;directory&gt;
+</verb>
+<quote>
+The next directory specifies the location where the
+<tt>ftp-proxy</tt> executable itself will be installed.  The
+default is <tt>EXEC-PREFIX/sbin</tt> if this option does not
+request otherwise.
+</quote>
+
+<verb>
+--sysconfdir=&lt;directory&gt;
+</verb>
+<quote>
+The last directory related option (others may be given, but
+have no effect) deals with the <tt>proxy-suite/ftp-proxy.conf</tt>
+configuration file.  Again there is a default if the option is
+not provided, <tt>PREFIX/etc</tt>.
+Please note that the location of the config file can be selected
+at run time with the <em>-f</em> flag, but if the file is
+installed at the default location, this flag is redundant.
+</quote>
+
+<verb>
+--enable-debug
+</verb>
+<quote>
+This option allows the generation of debugging output and
+is mainly included for evaluation (and development) purposes.
+It is recommended not to specify this option for deployment
+of the FTP-Proxy into production environments.
+</quote>
+
+<verb>
+--enable-warnings
+</verb>
+<quote>
+If compiling with the GNU GCC compiler, this flag increases
+the warning level.  This is useful to detect programming
+errors or incompatibilities with the target platform.  Our
+recommendation is to enable it anyway.
+</quote>
+
+<verb>
+--enable-so-linger
+</verb>
+<quote>
+It is strongly recommended to enable this option for all systems.
+Only if the target does have problems with <em>SO_LINGER</em>
+handling, it should be disabled.
+</quote>
+
+<verb>
+--with-regex[=PATH]
+</verb>
+<quote>
+This option is mainly needed to provide the location of the
+POSIX 1002.3 regular expression library if it is not included
+in the standard C library.  Regular expressions are used to
+scan the arguments of the various FTP commands received from
+clients.  If your system does not include the required support,
+you can download the latest version from the
+<htmlurl url="ftp://ftp.gnu.org/pub/gnu/regex/" name="GNU">
+archive.  Again, it's free.  GNU RegEx is known to work with
+FTP-Proxy.  If the option is not given, regular expression
+support is not installed at all and arguments will not be
+investigated any further.
+</quote>
+
+<verb>
+--with-libwrap[=PATH]
+</verb>
+<quote>
+If running as a standalone background daemon, FTP-Proxy can be
+instructed to make use of the <em>TCP Wrapper</em> library.
+If this is compiled in and enabled in the configuration file,
+the <tt>/etc/hosts.allow</tt> and <tt>/etc/hosts.deny</tt>
+files will be consulted to decide if a client will be served.
+</quote>
+
+<verb>
+--with-libldap[=PATH]
+</verb>
+<quote>
+If you want to supply the user specific configuration values
+(not the basic ones) via an LDAP directory, compile in LDAP
+support.  The <tt>configure</tt> script can determine without
+further manual intervention whether to use the <em>OpenLDAP</em>,
+the <em>University of Michigan</em> or the <em>Netscape</em>
+version of the API. <em>OpenLDAP</em> is the preferred API.
+</quote>
+
+<verb>
+--with-crypt[=PATH]
+</verb>
+<quote>
+This option enables support for crypted passwords in user
+authentication (curently ldap based only).  See also the
+<tt>LDAPAuthPWType</tt> configuration file option.
+</quote>
+
+<item>
+After <tt>configure</tt> has completed successfully, it is now
+time to run <tt>make</tt> (GNU make). It will read the
+<tt>Makefile</tt> generated by <tt>configure</tt> in the previous
+step and perform the compilation process. The program should not
+display any warnings or errors.
+
+<p>
+<item>
+When the executables have been generated, a final call to
+<tt>make install</tt> will copy the FTP-Proxy files into their
+appropriate places.  Usually root privileges are required in
+order to install the files in their proper places.
+
+<p>
+<item>
+Currently, you'll have to modify your system manually so that
+ftp-proxy is run at system bootup or from inetd (depending on
+which mode you choose in the configuration file or command line).
+We provide an sample run level script <tt>rc.script</tt> for
+(SuSE) Linux; see also description in <tt>rc.script.txt</tt>.
+
+<p>
+<item>
+The last step is the configuration of the installed FTP-Proxy;
+see following <ref id="config" name="Configuration"> section.
+</enum>
+
+<!-- ##################################################### -->
+<!-- Configuration -->
+
+<sect>Configuration
+<label id="config">
+
+<p>
+The following section describes the fundamental configuration
+of the FTP-Proxy. It assumes, that you have successfully
+compiled and installed the FTP-Proxy.
+
+The proxy uses a configuration file <em>ftp-proxy.conf</em>
+you have to edit before the proxy can be used - it is needed
+to configure at least the variables described in this section.
+For a complete list of valid configuration options consult
+the <em>ftp-proxy.conf(5)</em> manual page and the sample
+configuration file <em>ftp-proxy.conf.sample</em> file
+which comes with the distribution.
+
+<p>
+First, you have to choose, if you wand to start the proxy
+as a stand-alone daemon or via "(x)inetd" super daemon using
+the <tt>ServerType</tt> configuration option (or the start
+arguments). If nothing specified, "inetd" mode is assumed.
+See also section <ref id="security" name="Local System Security">.
+In stand-alone daemon mode, the proxy defaults to listen on the
+FTP port 21 and all interfaces. You can override this using the
+<tt>Port</tt> and <tt>Listen</tt> configuration options.
+
+The next step you have to do, is to choose, if the Proxy should
+run in "inbound" or in "outbound" mode. See the section
+<ref id="traffic" name="Inbound and Outbound FTP Traffic">.
+
+<p>
+Now, the proxy should be able to run and serve the client requests.
+The proxy follows the FTP transfer mode the client has choosed.
+
+You can override this behaviour setting the option
+<tt>DestinationTransferMode</tt> to either <em>active</em> or
+<em>passive</em> instead of the default <em>client</em>, and
+the proxy will be forced to use the specified FTP transfer mode
+for all transfers it does between the proxy and the ftp server.
+Most common usage is to force the proxy to use <em>passive</em>
+transfers only.
+
+
+
+<!-- ##################################################### -->
+<!-- Local System Security -->
+
+<sect>Local System Security
+<label id="security">
+
+<p>
+FTP-Proxy comes with several configuration features that help
+to increase local system security, namely <tt>ServerRoot</tt>,
+<tt>User</tt> and <tt>Group</tt>.
+
+<p>
+The way FTP-Proxy is being called needs to be considered.  One
+possible way is via the system's inetd (or xinetd) Internet Super
+Daemon.  In this case FTP-Proxy will not fork or become a daemon.
+It will serve the client and terminate itself after delivery.
+When configuring (x)inetd to include the ftp-proxy executable,
+<tt>ServerRoot</tt> (chroot) should be used.
+The <tt>User</tt> and <tt>Group</tt> need not be given if they
+are specified in the inetd configuration itself.
+
+<p>
+The <tt>User</tt> and <tt>Group</tt> options should actually be
+considered for standalone operations. In this case the ftp-proxy
+will bind the listening socket to the port number set using the
+<tt>Port</tt> and <tt>Listen</tt> options, preform the chroot
+operation if <tt>ServerRoot</tt> is used, drop privileges to
+the UID/GID set with <tt>User</tt> and <tt>Group</tt> options
+and open log.
+
+<p>
+It might be a good idea to create a new user (e.g. "ftpproxy")
+as well as a group (e.g. "ftpproxy") in order to reach a better
+granularity for the user administration.
+
+<p>
+When using <tt>ServerRoot</tt>, please note that usually other
+files needs to be installed into the runtime environment as well,
+e.g. the /dev/null device, system databases like /etc/services,
+/etc/hosts, libraries like libc and possibly other (e.g. libcrypt
+under AIX 4.3, a resolver library like libresolv or libnss
+libraries on systems using the NameServiceSwitch - see also
+nsswitch.conf(5)).
+If you are using the <tt>User</tt> and <tt>Group</tt> options,
+you may also need the /etc/passwd and /etc/group files.
+
+<p>
+The sample run level script <tt>rc.script</tt> for (SuSE)
+Linux supports the preparation of a chroot runtime
+environment - see description in <tt>rc.script.txt</tt>.
+
+
+<!-- ##################################################### -->
+<!-- Inbound and Outbound FTP Traffic -->
+
+<sect>Inbound and Outbound FTP Traffic
+<label id="traffic">
+
+<p>
+The most common use of FTP-Proxy will probably be "inbound" FTP
+traffic. This means that clients from an "outside" world seek access
+to a "local" FTP server specified in the <tt>DestinationAddress</tt>
+variable.
+
+Nevertheless, FTP-Proxy supports also an "outbound" mode, where
+clients have more control over the FTP connections. The FTP-Proxy
+implements two concepts of "outbound" traffic.
+
+<p>
+<itemize>
+<item>
+<em>MagicUser</em>
+<p>
+The first one is based on the increased level of trust that users
+enjoy. When setting the <tt>AllowMagicUser</tt> config option to
+"yes" and allowing the "@" (see also <tt>UseMagicChar</tt> option)
+and ":" characters as part of the USER command argument, users can
+determine the destination server's address and port with the USER
+command. All they have to do is to append the host name, separated
+by the "@" sign (or other set using <tt>UseMagicChar</tt> option),
+optionally followed by a colon and the port.  These components will
+be removed from the name and evaluated as destination.
+
+<p>
+<item>
+<em>Transparent-Proxy</em>
+<p>
+The second one is based on IP-NAT packet redirections, commonly
+called <em>transparent proxying</em>. This method is currently
+implemented for Linux ipchains (2.2 kernel) and iptables (2.4
+kernel), as well as for BSD ipnat, tested on OpenBSD 2.9 and
+FreeBSD 4.4. A description how to setup the redirections is
+provided in the <tt>TransProxy-Mini-Howto.txt</tt> file.
+<p>
+When setting the <tt>AllowTransProxy</tt> config option to "yes",
+the proxy will evaluate the original destination address and port
+the client wanted connect as destination. If <tt>AllowMagicUser</tt>
+is enabled as well, the users are still able to provide a different
+destination using the USER command argument.
+</itemize>
+
+<p>
+If <tt>AllowTransProxy</tt> and <tt>AllowMagicUser</tt> are not
+used, the FTP-Proxy runs in the "inbound" mode and the
+<tt>DestinationAddress</tt> is mandatory.
+
+In "outbound" mode, <tt>DestinationAddress</tt> is used as default
+or fallback destination, that will be used if no other destination
+is found using <em>Transparent-Proxy</em> or <em>Magic-User</em>
+mechanisms.
+
+
+<!-- ##################################################### -->
+<!-- Command Restriction -->
+
+<sect>Command Restriction
+<label id="commandrestriction">
+
+<p>
+The FTP-Proxy allows to define a space separated list of allowed
+FTP commands using the <tt>ValidCommands</tt> configuration
+variable in global and in a per user context.
+If this variable is not used (default), no command restriction
+will take place and all of the following commands are allowed:
+
+<verb>
+  ABOR ACCT ALLO APPE CDUP CWD
+  DELE HELP LIST MAIL MDTM MKD
+  MLFL MODE MRCP MRSQ MSAM MSND
+  MSOM NLST NOOP PASS PASV PORT
+  PWD  QUIT REIN REST RETR RMD
+  RNFR RNTO SITE SIZE SMNT STAT
+  STOR STOU STRU SYST TYPE USER
+  XCUP XCWD XMKD XPWD XRMD
+</verb>
+<!--
+  ### no implemented yet ###
+  APSV     : allways passive, enable-rfc1579
+  AUTH     : SSL sftp support, with-ssl
+  EPRT EPSV: IPv6 extensions, enable-rfc2428
+ -->
+
+Otherwise, only commands included in the list are allowed
+and all other denied.
+
+<p>
+Further, if the FTP-Proxy is compiled with regular expression
+support (see <ref id="installation" name="--with-regex"> switch),
+each command may be followed by an optional equal sign and a
+<em>POSIX 1003.2 Extended Regular Expression (RE)</em> that
+describes the valid argument(s) for the command.
+
+If the whole string is to be matched, the pattern has to start
+with a caret (^) and end  with a dollar ($). If no pattern
+follows a command, its arguments are not checked.
+
+An example for a name would be the pattern
+<tt>^[a-zA-Z0-9]{1,16}$</tt>, i.e. as expresion for the USER
+command:
+<verb>
+  USER=^[a-zA-Z0-9]{1,16}$
+</verb>
+This definition specifies, that the argument is mandatory and may
+consist of up to 16 letters or digits only.
+
+A command that does not allow any arguments can also easily be
+represented, i.e:
+<verb>
+  QUIT=^$
+</verb>
+
+<p>
+Please note that the regular expression is "pre-processed". This
+means that a pattern in the form <tt>%xx</tt> will be interpreted
+as a hexadecimal constant and will be replaced by the value of
+that constant. This looks a bit like HTML and helps to include
+characters that might not be handled as expected, like <tt>%20</tt>
+for space or <tt>%5c</tt> (equivalent to <tt>%5C</tt>) for backslash.
+The space is especially important because it is the separator
+for the commands within the list itself.
+
+<!-- ##################################################### -->
+<!-- User Authentication -->
+
+<sect>User Authentication
+<label id="userauth">
+
+<p>
+Since proxy-suite Version 1.9 the ftp-proxy supports user
+authentication. To enable it, the <tt>UserAuthType</tt>
+configuration option have to be set to the name of the
+mechanism used, i.e. <em>ldap</em> (currently the only one).
+
+For more information on LDAP based authentication, see also
+the <ref id="ldap" name="Using an LDAP Directory"> section.
+
+Per default, the normal "ftpuser" and "ftppass" from <em>USER</em>
+and <em>PASS</em> FTP commands are used for the authentication.
+This may be usefull especially in "inbound" mode of the proxy.
+
+In "outbound" mode, it may be usefull to use an extended enconding
+of an "authuser" and "authpass" additionally to the normal "ftpuser"
+and "ftppass" using the <tt>UserAuthMagic</tt> option supported by
+some FTP clients, i.e. <em>"@auth" for NcFTP, type 5</em>.
+
+The <tt>UserAuthMagic</tt> configuration variable can be set to
+either <em>auth@</em> or <em>@auth</em>, where "@" is an encoding
+separator character and can also be set to an different one, i.e.
+to ":", using <em>auth:</em> or <em>:auth</em>.
+
+If the "auth" keyword is prepended by the separator character, the
+USER command will be parsed as "ftpuser@authuser" or in combination
+with the <tt>AllowMagicUser</tt> as "ftpuser@authuser@host:port"
+and the PASS FTP command as "ftppass@authpass".
+
+If the "auth" keyword is followed by the separator character,
+the parsing is done in the different order as "authuser@ftpuser".
+
+
+<!-- ##################################################### -->
+<!-- Using an LDAP Directory -->
+
+<sect>Using an LDAP Directory
+<label id="ldap">
+<p>
+The main option to use an LDAP directory is the <tt>LDAPServer</tt>
+configuration option. If given, it specifies the hostname of the
+directory server (optionally followed by port number separated by
+a colon).
+
+The program will bind the directory using <tt>LDAPBindDN</tt>
+(and <tt>LDAPBindPW</tt>) and retrive the values having an object
+class of <tt>LDAPObjectClass</tt> and identified by the
+<tt>LDAPIdentifier</tt>.
+
+The <em>LDAPBindDN</em> and <em>LDAPBindPW</em> option defines the
+distinguished name and credentials (password) needed to access the
+data in the directory service.
+It is allowed to include one %s in <em>LDAPBindDN</em> - it will be
+replaced with the user name. If <em>UserAuthMagic</em> is used, the
+special "authuser" and "authpass" are used, otherwise normal "ftpuser"
+and "ftppass" from USER and PASS ftp commands.
+If no <em>LDAPBindDN</em> specified, a annonymous bind will be used.
+
+Additionally the directory tree root should be specified using
+the <tt>LDAPBaseDN</tt> or <tt>LDAPAuthDN</tt> option. You can
+also use both options set to differen root's if your profile
+data is stored in a different tree than the authentication data.
+One of both options is mandatory.
+
+<p>
+<itemize>
+<item>
+<em>LDAP User-Profiles</em>
+<p>
+In order to gain more flexibiliy for the user management, the
+user dependent parts of the configuration can also be supplied
+with an LDAP directory.
+
+The following configuration options will be tryed to retrieve
+from the tree root specified by the <tt>LDAPBaseDN</tt> option:
+<verb>
+ DestinationAddress, DestinationPort, DestinationTransferMode,
+ DestinationMinPort, DestinationMaxPort, ActiveMinDataPort,
+ ActiveMaxDataPort, PassiveMinDataPort, PassiveMaxDataPort,
+ SameAddress, TimeOut, ValidCommands.
+</verb>
+
+For example, if your user (USERNAME) dependent configuration
+is stored as <em>uid=USERNAME,ou=FTPProxy,dc=domain,dc=top</em>
+in the directory, the setup may be as follows:
+<verb>
+  LDAPServer      ldap.domain.top:389
+  LDAPBaseDN      ou=FTPProxy,dc=domain,dc=top
+  LDAPIdentifier  uid
+</verb>
+If a non-anonymous bind is needed to access the tree,
+a <em>LDAPBind</em> can be specified either to an
+specific user, i.e. "proxyuser":
+<verb>
+  LDAPBindDN      uid=proxyuser,ou=FTPProxy,dc=domain,dc=top
+</verb>
+or also the user who want to login (ftp-user or auth-user name
+depending on UserAuthMagic):
+<verb>
+  LDAPBindDN      uid=%s,ou=FTPProxy,dc=domain,dc=top
+</verb>
+
+<p>
+<item>
+<em>User-Authentication</em>
+<p>
+Since proxy-suite Version 1.9 the ftp-proxy supports also
+LDAP based user authentication.
+
+To activate it, you have to set the <tt>UserAuthType</tt>
+configuration option to <em>ldap</em> and define the
+authentication tree root using the <tt>LDAPAuthDN</tt>
+configuration option. If no <tt>LDAPAuthDN</tt> option
+is set, <tt>LDAPBaseDN</tt> is used instead.
+
+If you only want to check, if an user is allowed to
+use the ftp-proxy service or not, you can define the
+<tt>LDAPAuthOKFlag</tt> option to an attribute name
+and its value, separated with an equal character.
+The program will check, if the value for the given
+attribute exists - the attribute may contain multiple
+values. Example:
+<verb>
+LDAPAuthOKFlag   AllowedService=ftpProxy
+</verb>.
+
+Further it is also possible to preform an password
+authentication using the <tt>LDAPAuthPWAttr</tt>
+and <tt>LDAPAuthPWType</tt> options.
+The <tt>LDAPAuthPWAttr</tt> defines the name of the
+password attribute. A common name for this attribute
+is <em>userPassword</em>.
+
+The <tt>LDAPAuthPWType</tt> option defined the type
+of the password stored in the directory service.
+Supported password types are <em>plain</em> for plain-text
+passwords, <em>crypt</em> for crypted passwords and
+<em>{crypt}</em> for crypted passwords prefixed with
+a <em>{crypt}</em> string (a scheme specification).
+The type may be followed by the number 0-9 of minimal
+allowed passord length, i.e.
+<verb>
+LDAPAuthPWType   plain
+</verb>
+This definition means, the directory contains plain-text
+password with the default minimal length of at least 5
+characters.
+
+</itemize>
+
+
+<!-- ##################################################### -->
+<!-- Logging -->
+
+<sect>Logging and Auditing
+<label id="logging">
+
+<p>
+All possible log messages with their exact wording have been
+collected and listed in the file <em>SYSLOG</em> which is part
+of the FTP-Proxy distribution.  You can find it in the
+<em>ftp-proxy</em> subdirectory.
+
+<p>
+The FTP-Proxy logs can be sent to a file, to a pipe, or to the
+<em>syslogd(8)</em> daemon for further evaluation and handling.
+It is strongly recommended to use syslog because it is the only
+way to send logging messages to another machine as they are
+generated.
+
+<p>
+This off shore logging is especially important for FTP-Proxy
+servers located in exposed areas, like the Demilitarized Zone
+of a firewall.  Anything that is stored on the computer itself
+can easily be manipulated in the case of a hostile takeover.
+And when the auditor stops by on his weekly audit tour, all
+traces have long since been wiped out.
+In order to implement remote logging the <em>syslog.conf(5)</em>
+file has to include an entry for the selected facility using a
+target starting with the letter '@' followed by the DNS name
+or IP address of the external log host.  Usually this loghost
+may be not part of the DMZ, but be located on the intranet or
+dedicated administration network.
+The UDP syslog traffic is then allowed to pass through the
+internal firewall router.  Note that the syslogd on the log
+host usually has to be started with the "<em>-r</em>" option
+to enable the reception of logging information from another
+machine.
+
+<p>
+The FTP-Proxy syslog messages have been created in a way that
+should ease the task of scanning and evaluating.  Each message
+contains a tag that can easily be recognized.  It consists
+of a prefix that is either <em>TECH</em> or <em>USER</em>,
+followed by a hyphen and one of <em>DBG</em>, <em>INF</em>,
+<em>WRN</em>, <em>ERR</em>, or <em>FTL</em>.
+
+<p>
+Using the <tt>LogLevel</tt> configuration option, you can
+skip message levels not interesting for you. For example,
+<verb>LogLevel  WRN</verb> will cause skipping of all
+<em>DBG</em> and <em>INF</em> messages and displaying only
+the <em>WRN</em>, <em>ERR</em> and <em>FLT</em> level
+messages. Default level is <em>INF</em> - no <em>DBG</em>
+messages will get logged.
+
+<p>
+The possible combinations can be interpreted as follows:
+
+<verb>
+TECH-DBG
+</verb>
+<quote>
+Messages with this tag carry some technical informations usefull
+for diagnostics purposes with no need to react to them.
+</quote>
+
+<verb>
+TECH-INF
+</verb>
+<quote>
+Messages with this tag carry some technical information with
+no need to react to them.  They might display the contents of
+the configuration file or the start or stop of the program.
+These messages are generated with the <em>INFO</em> syslog
+severity.
+</quote>
+
+<verb>
+TECH-WRN
+</verb>
+<quote>
+Messages with this tag display some mild technical problem
+or inconsistency.  E.g. a configuration variable with no
+value given or a temporary resource shortage would be sent
+in this context.  Also if an FTP server closed a connection
+without being instructed by the client or proxy would generate
+this kind of message.  These messages are generated with the
+<em>WARNING</em> syslog severity.
+</quote>
+
+<verb>
+TECH-ERR
+</verb>
+<quote>
+Messages with this tag usually mean a severe error condition
+that will lead to the termination of the emitting process.
+Problems that fall under this category include the inability
+to open the configuration file, internal security handling,
+network problems like ports already in use by other processes,
+input/output errors or other communication faults.  It is
+strongly advised that all such messages shall be investigated
+and further action is taken.  These messages are generated with
+the <em>ERROR</em> syslog severity.
+</quote>
+
+<verb>
+TECH-FTL
+</verb>
+<quote>
+Messages with this tag should be very rare.  They are reserved
+for really weird situations which reveal bugs in the internal
+FTP-Proxy programming.  Please report any such occurrance to
+the Proxy-Suite development team, it requires the programmer's
+attention.  These messages are generated with the <em>CRIT</em>
+syslog severity.
+</quote>
+
+
+<verb>
+USER-DBG
+</verb>
+<quote>
+Messages with this tag are currently not being used.
+</quote>
+
+<verb>
+USER-INF
+</verb>
+<quote>
+Messages with this tag will be the majority of all messages.
+They are generated for all regular user actions like logging
+in, sending commands and transfer statistics.  Their main
+purpose is to provide a complete audit trail for every user
+interaction.  These messages are generated with the <em>INFO</em>
+syslog severity.
+</quote>
+
+<verb>
+USER-WRN
+</verb>
+<quote>
+Messages with this tag indicate some sort of unforeseen user
+action, but need not be taken too seriously.  Only if there is
+a pattern of regular or frequent messages of this kind, you
+might want to look a bit closer.  These messages are generated
+with the <em>WARNING</em> syslog severity.
+</quote>
+
+<verb>
+USER-ERR
+</verb>
+<quote>
+Messages with this tag mean that the user has been rejected.
+Currently no other message has been defined with this tag,
+although this might be changed in the future. These messages
+are generated with the <em>ERROR</em> syslog severity.
+</quote>
+
+<verb>
+USER-FTL
+</verb>
+<quote>
+Messages with this tag are currently not being used.
+</quote>
+
+
+<!-- ##################################################### -->
+<!-- Copyright and License -->
+
+<sect>Copyright and License
+<label id="copyright">
+
+<p>
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version
+2 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the
+
+<quote>
+Free Software Foundation, Inc.
+59 Temple Place - Suite 330,
+Boston, MA 02111-1307, USA.
+</quote>
+
+<!-- ##################################################### -->
+<!-- Authors -->
+
+<sect>Authors
+<label id="authors">
+
+<p>
+FTP-Proxy is part of the SuSE Proxy-Suite project and was
+written by
+
+<p>
+Volker Wiegand (programming,
+    <htmlurl url="mailto:wiegand@suse.de"
+    name="wiegand@suse.de">),
+<p>
+Jens-Gero Boehm (project management,
+    <htmlurl url="mailto:Jens-Gero.Boehm@suse.de"
+    name="Jens-Gero.Boehm@suse.de">),
+<p>
+Pieter Hollants (documentation,
+    <htmlurl url="mailto:Pieter.Hollants@suse.de"
+    name="Pieter.Hollants@suse.de">), and
+<p>
+Marius Tomaschewski (maintainance, programming,
+    <htmlurl url="mailto:mt@suse.de"
+    name="mt@suse.de">).
+
+<p>
+A Mailing List has been installed for the discussion of SuSE
+Proxy-Suite.  To subscribe, send an empty E-Mail to
+<htmlurl url="mailto:proxy-suite-subscribe@suse.com"
+name="proxy-suite-subscribe@suse.com">.
+
+<p>
+We have also installed an announcement mailing list.  Here you
+will be informed about updates and other major issues.  To
+subscribe, send an empty E-Mail to
+<htmlurl url="mailto:proxy-suite-announce-subscribe@suse.com"
+name="proxy-suite-announce-subscribe@suse.com">.
+
+<p>
+Last but not least you may send bug reports to the following
+address:
+<htmlurl url="mailto:proxy-suite-bugs@suse.com"
+name="proxy-suite-bugs@suse.com">.
+
+<p>
+Please visit the SuSE Proxy-Suite Homepage at
+<htmlurl url="http://proxy-suite.suse.de/"
+    name="http://proxy-suite.suse.de/">.
+
+</article>
+
+<!--
+############################################################
+# $Log: ftp-proxy.sgml,v $
+# Revision 1.7  2002/05/02 13:05:28  mt
+# documented simple user auth
+#
+# Revision 1.6  2002/01/14 18:38:23  mt
+# documented transparent proxying mode, extended the ServerRoot infos
+#
+# Revision 1.5  2001/11/06 23:04:43  mt
+# applied / merged with transparent proxy patches v8
+# see ftp-proxy/NEWS for more detailed release news
+#
+# Revision 1.4  1999/10/22 09:20:36  wiegand
+# work in progress, not yet finished
+#
+# Revision 1.3  1999/10/04 11:51:54  wiegand
+# still work in progress
+#
+# Revision 1.2  1999/09/24 17:53:16  wiegand
+# documentation snapshot, "work in progress"
+#
+# Revision 1.1  1999/09/21 08:07:45  wiegand
+# initial checkin
+#
+############################################################
+-->
+

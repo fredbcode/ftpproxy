@@ -1,0 +1,319 @@
+#
+# $Id: SYSLOG,v 1.8 2002/05/02 14:25:04 mt Exp $
+#
+# These are all currently existing syslog(3) message types
+# except of the USER-DBG and TECH-DBG levels.
+#
+# TECH-FTL are usually internal program errors, where
+#          a function receives no argument or the like.
+#
+# TECH-ERR are usually errors which cannot be corrected
+#          and may lead to program termination. If the
+#          errno variable has a non-zero value, it will
+#          appended to the error message in the form:
+#          ... (errno=<errno> [err-string])
+#
+# TECH-WRN are usually conditions that indicate some sort
+#          of misbehaviour, but need no immediate action.
+#
+# TECH-INF are usually confirmation or progress messages
+#          and can be ignored in terms of auditing.
+#
+# USER-FTL do not exist at the time of this writing.
+#
+# USER-ERR are usually situations that ask for some kind
+#          of operator investigation. Most likely some
+#          illegal action has been tried and rejected.
+#
+# USER-WRN are usually situations that operators might
+#          want to look into just out of curiosity. If
+#          they don't, nothing will happen -- probably.
+#
+# USER-INF are usually situations that show some legal
+#          user actions or statistics. They can always
+#          be ignored, but operators might want to keep
+#          them for maintaining an audit trail.
+#
+#
+# The following variables are used in this discussion:
+#
+# <prog>   name of the current program
+# <file>   file, including source file
+# <dir>    directory (e.g. for chroot)
+# <line>   source line
+# <hls>    "High Level Socket"
+# <ctyp>   HLS "Connection Type":
+#                  Cli-Ctrl, Cl-Data, Srv-Ctrl, Srv-Data
+# <name>   symbolic name, incl. config options
+# <value>  value, usually for a config option
+# <gid>    UNIX style group ID
+# <uid>    UNIX style user ID
+# <addr>   IP address in dotted decimal notation
+# <port>   TCP port number as a umber
+# <sock>   socket number (sort of file descriptor)
+# <cmd>    FTP command
+# <arg>    argument to an FTP command
+# <user>   FTP user name
+# <num>    number of, i.e. bytes, secs, ...
+# <code>   response code from an FTP server
+# <opt>    Telnet option
+# <lwr>    lower end of a port range
+# <upr>    upper end of a port range
+# <regex>  POSIX 1002.3 regular expression
+#
+# The following paragraphs summarize the exact wording of all
+# currently implemented syslog(3) messages, sorted by source
+# file.
+#
+
+
+# Source file: ++++ common/com-config.c
+
+Severity  Pattern   Text
+========  ========  ===============================================
+crit      TECH-FTL  <prog> (<file>:<line>): config_line: ?fp?
+crit      TECH-FTL  <prog> (<file>:<line>): config_read: ?file?
+crit      TECH-FTL  <prog> (<file>:<line>): config_int: ?name?
+crit      TECH-FTL  <prog> (<file>:<line>): config_bool: ?name?
+crit      TECH-FTL  <prog> (<file>:<line>): config_str: ?name?
+crit      TECH-FTL  <prog> (<file>:<line>): config_addr: ?name?
+crit      TECH-FTL  <prog> (<file>:<line>): config_port: ?name?
+crit      TECH-FTL  <prog> (<file>:<line>): config_uid: ?name?
+crit      TECH-FTL  <prog> (<file>:<line>): config_gid: ?name?
+err       TECH-ERR  can't open config file '<file>'
+warn      TECH-WRN  no config value for '<name>'
+info      TECH-INF  Config-File: '<file>'
+info      TECH-INF  Config-Section ------ '<name>'
+info      TECH-INF  Config: <name> = '<value>'
+
+
+# Source file: ++++ common/com-misc.c
+
+Severity  Pattern   Text
+========  ========  ===============================================
+crit      TECH-FTL  <prog> (<file>:<line>): misc_alloc: ?len?
+crit      TECH-FTL  <prog> (<file>:<line>): out of memory
+crit      TECH-FTL  <prog> (<file>:<line>): misc_strdup: ?str?
+err       TECH-ERR  can't remove pidfile '<file>'
+err       TECH-ERR  can't open pidfile '<file>'
+err       TECH-ERR  can't chroot to '<dir>'
+err       TECH-ERR  can't determine Group-ID to use
+err       TECH-ERR  can't set Group-ID to <gid>
+err       TECH-ERR  can't determine User-ID to use
+err       TECH-ERR  can't set User-ID to <uid>
+
+
+# Source file: ++++ common/com-socket.c
+
+Severity  Pattern   Text
+========  ========  ===============================================
+crit      TECH-FTL  <prog> (<file>:<line>): socket_kill: ?hls?
+crit      TECH-FTL  <prog> (<file>:<line>): socket_gets: ?hls? ?ptr? ?len?
+crit      TECH-FTL  <prog> (<file>:<line>): socket_flag: ?hls?
+crit      TECH-FTL  <prog> (<file>:<line>): socket_write: ?hls? ?ptr?
+crit      TECH-FTL  <prog> (<file>:<line>): socket_printf: ?hls? ?fmt?
+crit      TECH-FTL  <prog> (<file>:<line>): socket_file: ?hls? ?file?
+crit      TECH-FTL  <prog> (<file>:<line>): socket_ll_read: ?hls?
+crit      TECH-FTL  <prog> (<file>:<line>): socket_ll_write: ?hls?
+crit      TECH-FTL  <prog> (<file>:<line>): socket_msgline: ?fmt?
+crit      TECH-FTL  <prog> (<file>:<line>): socket_d_listen: ?phls? ?ctyp?
+crit      TECH-FTL  <prog> (<file>:<line>): socket_d_listen: ?*phls?
+crit      TECH-FTL  <prog> (<file>:<line>): socket_d_connect: ?phls? ?ctyp?
+crit      TECH-FTL  <prog> (<file>:<line>): socket_d_connect: ?*phls?
+err       TECH-ERR  can't create listener socket
+err       TECH-ERR  can't bind to <addr>:<port>
+err       TECH-ERR  can't accept client
+err       TECH-ERR  can't execute select
+err       TECH-ERR  can't accept <ctyp>
+err       TECH-ERR  can't create <ctyp> socket
+err       TECH-ERR  can't read from <sock>=<addr>
+err       TECH-ERR  can't ll_read: <ctyp> <sock>=<addr>
+err       TECH-ERR  can't ll_write: <ctyp> <sock>=<addr>
+err       TECH-ERR  can't get num of bytes: <ctyp> <sock>=<addr>
+err       TECH-ERR  can't get sockname for socket <sock>
+err       TECH-ERR  can't get peername for socket <sock>
+err       TECH-ERR  can't get iptables transparent destination
+err       TECH-ERR  can't get ipnat transparent destination
+err       TECH-ERR  can't open ipnat device '<file>'
+warn      TECH-WRN  port <port> is in use...
+err       USER-ERR  <name> reject: '<addr>' (Wrap)
+
+
+# Source file: ++++ common/com-syslog.c
+
+Severity  Pattern   Text
+========  ========  ===============================================
+crit      TECH-FTL  <prog> (<file>:<line>): invalid log level '<file>'
+crit      TECH-FTL  <prog> (<file>:<line>): can't remove logfile '<file>'
+crit      TECH-FTL  <prog> (<file>:<line>): can't open logfile '<file>'
+crit      TECH-FTL  <prog> (<file>:<line>): can't open logpipe '<value>'
+crit      TECH-FTL  <prog> (<file>:<line>): can't rotate logfile '<file>'
+info      TECH-INF  reopening log - new destination is '<file>'
+info      TECH-INF  rotating log file '<file>'
+
+
+# Source file: ++++ common/com-debug.c
+
+Severity  Pattern   Text
+========  ========  ===============================================
+crit      TECH-FTL  <prog> (<file>:<line>): invalid debug settings <value> / <file>
+
+
+# Source file: ++++ ftp-proxy/ftp-client.c
+
+Severity  Pattern   Text
+========  ========  ===============================================
+crit      TECH-FTL  <prog> (<file>:<line>): client_run: ?cli_ctrl?
+err       TECH-ERR  bad response <num> from server for <addr>
+err       TECH-ERR  bad PASV 227 response from server for <addr>
+err       TECH-ERR  can't connect Srv-Data for <addr>
+err       TECH-ERR  can't connect Cli-Data for <addr>
+err       TECH-ERR  Srv-Ctrl: can't create socket for <addr>
+err       TECH-ERR  Srv-Ctrl: can't bind to <addr>:<port> for <addr>
+err       TECH-ERR  Srv-Ctrl: can't connect <addr>:<port> for <addr>
+warn      TECH-WRN  server closed connection for <addr>
+warn      TECH-WRN  bogus '<code>' from Server-PI for <addr>
+info      TECH-INF  '<cmd> <arg>' sent for <addr>
+info      TECH-INF  '<cmd>' sent for <addr>
+err       USER-ERR  reject: '<addr>' (DenyMessage)
+warn      USER-WRN  WILL/WONT refused for <addr>
+warn      USER-WRN  DO/DONT refused for <addr>
+warn      USER-WRN  <cmd> from <addr> not allowed
+warn      USER-WRN  bad arg '<arg>' for '<cmd>' from <addr>: <errmsg>
+warn      USER-WRN  unknown '<cmd>' from <addr>
+info      USER-INF  connect from <addr>
+info      USER-INF  IAC-<opt> from <addr>
+info      USER-INF  Transfer for <addr>: <cmd> '<arg>' read <num>/<num> byte/sec
+info      USER-INF  Transfer for <addr>: <cmd> '<arg>' send <num>/<num> byte/sec
+info      USER-INF  closing connect from <addr> after <num> secs - read <num>/<num>, sent <num>/<num> byte/sec
+
+
+# Source file: ++++ ftp-proxy/ftp-cmds.c
+
+Severity  Pattern   Text
+========  ========  ===============================================
+crit      TECH-FTL  <prog> (<file>:<line>): cmds_pthr: ?ctx?
+crit      TECH-FTL  <prog> (<file>:<line>): cmds_pthr: ?curr_cmd?
+crit      TECH-FTL  <prog> (<file>:<line>): cmds_user: ?ctx?
+crit      TECH-FTL  <prog> (<file>:<line>): cmds_user: ?srv_ctrl?
+crit      TECH-FTL  <prog> (<file>:<line>): cmds_pass: ?ctx?
+crit      TECH-FTL  <prog> (<file>:<line>): cmds_rein: ?ctx?
+crit      TECH-FTL  <prog> (<file>:<line>): cmds_quit: ?ctx?
+crit      TECH-FTL  <prog> (<file>:<line>): cmds_port: ?ctx?
+crit      TECH-FTL  <prog> (<file>:<line>): cmds_pasv: ?ctx?
+crit      TECH-FTL  <prog> (<file>:<line>): cmds_xfer: ?ctx?
+crit      TECH-FTL  <prog> (<file>:<line>): cmds_xfer: ?curr_cmd?
+crit      TECH-FTL  <prog> (<file>:<line>): cmds_xfer: ?mode <mode>?
+crit      TECH-FTL  <prog> (<file>:<line>): cmds_abor: ?ctx?
+crit      TECH-FTL  <prog> (<file>:<line>): cmds_auth: ?ctx?
+crit      TECH-FTL  <prog> (<file>:<line>): cmds_reg_comp: ?ppre?
+crit      TECH-FTL  <prog> (<file>:<line>): cmds_reg_exec: ?regex? ?str?
+crit      TECH-FTL  <prog> (<file>:<line>): cmds_apsv: ?ctx?
+crit      TECH-FTL  <prog> (<file>:<line>): cmds_eprt: ?ctx?
+crit      TECH-FTL  <prog> (<file>:<line>): cmds_epsv: ?ctx?
+err       TECH-ERR  check of transparent destination failed
+err       TECH-ERR  Srv-Data: can't bind to <addr>:<lwr>-<upr> for <addr>
+err       TECH-ERR  Cli-Data: can't bind to <addr>:<lwr>-<upr> for <addr>
+err       TECH-ERR  can't eval RegEx '<regex>': <errmsg>
+warn      TECH-WRN  can't open NAT file '<file>'
+info      TECH-INF  'PORT <addr>:<port>' for <addr>
+info      TECH-INF  transparent proxy request to <addr>:<port> from <addr>
+err       USER-ERR  unknown destination address
+warn      USER-WRN  '<cmd>' without login from <addr>
+warn      USER-WRN  'USER' without name from <addr>
+warn      USER-WRN  'USER' without auth from <addr>
+warn      USER-WRN  bad arg '<arg>' for '<cmd>' from <addr>: <errmsg>
+warn      USER-WRN  bad 'USER@' dest '<addr>:<port>' from <addr>
+warn      USER-WRN  'PASS' without login from <addr>
+warn      USER-WRN  syntax error in 'PORT' from <addr>
+warn      USER-WRN  different address in 'PORT' from <addr>
+warn      USER-WRN  killing old PASV socket for <addr>
+warn      USER-WRN  'ABOR' from <addr>
+info      USER-INF  '<cmd>' from <addr>
+info      USER-INF  '<cmd> <arg>' from <addr>
+info      USER-INF  'USER <user>' dest <addr>:<port> from <addr>
+info      USER-INF  'USER <user>' from <addr>
+info      USER-INF  PASV set to <addr>:<port> for <addr>
+
+
+# Source file: ++++ ftp-proxy/ftp-daemon.c
+
+Severity  Pattern   Text
+========  ========  ===============================================
+err       TECH-ERR  can't fork daemon
+err       TECH-ERR  can't detach daemon
+err       TECH-ERR  can't bind daemon to <port>
+err       TECH-ERR  can't write config file into chroot
+err       TECH-ERR  child with PID <value> went away (removing it)
+err       TECH-ERR  can't fork client
+warn      TECH-WRN  can't fork client now
+err       USER-ERR  reject: '<addr>' (ForkLimit <num>)
+err       USER-ERR  reject: '<addr>' (MaxClients <num>)
+
+
+# Source file: ++++ ftp-proxy/ftp-ldap.c
+
+Severity  Pattern   Text
+========  ========  ===============================================
+crit      TECH-FTL  <prog> (<file>:<line>): ldap_setup_user: ?ctx?
+crit      TECH-FTL  <prog> (<file>:<line>): ldap_fetch: ?ctx? ?srv?
+crit      TECH-FTL  <prog> (<file>:<line>): ldap_fetch: ?BaseDN?
+crit      TECH-FTL  <prog> (<file>:<line>): ldap_fetch: ?ObjectClass?
+crit      TECH-FTL  <prog> (<file>:<line>): ldap_fetch: ?Identifier?
+crit      TECH-FTL  <prog> (<file>:<line>): ldap_attrib: ?ld? ?e? ?attr?
+err       TECH-ERR  can't read LDAP data for <addr>: <errmsg>
+err       TECH-ERR  can't eval DestAddr for <addr>
+err       TECH-ERR  can't eval DestPort for <addr>
+err       TECH-ERR  can't eval DestMode for <addr>
+err       TECH-ERR  can't reach LDAP server <addr>:<port>
+err       TECH-ERR  can't bind LDAP using dn '<bind-dn>'
+err       TECH-ERR  can't bind LDAP anonymously
+err       TECH-ERR  invalid user name or with asterisk
+err       TECH-ERR  ldap user auth - prefix missed
+info      USER-INF  reading data for '<user>' from LDAP
+info      USER-INF  reading data for '<user>' from cfg-file
+err       USER-ERR  LDAP user auth failed for <user> from <auth>
+err       USER-ERR  access denied for <user>
+
+# Source file: ++++ ftp-proxy/ftp-main.c
+
+Severity  Pattern   Text
+========  ========  ===============================================
+err       TECH-ERR  can't run without an destination address
+
+
+##################################################################
+# $Log: SYSLOG,v $
+# Revision 1.8  2002/05/02 14:25:04  mt
+# updated to match v1.9 messages, removed debug level
+#
+# Revision 1.7  2002/05/02 13:13:31  mt
+# merged with v1.8.2.2
+#
+# Revision 1.6.2.1  2002/04/04 14:30:44  mt
+# improved transparent proxy log messages
+#
+# Revision 1.6  2002/01/14 19:03:58  mt
+# added transparent proxying, extended transfer messages, actualized
+#
+# Revision 1.5  1999/10/19 10:19:15  wiegand
+# use port range also for control connection to server
+#
+# Revision 1.4  1999/09/30 09:48:57  wiegand
+# added dynamic TranslatedAddress via file
+#
+# Revision 1.3  1999/09/24 06:38:52  wiegand
+# added regular expressions for all commands
+# removed character map and length of paths
+# added flag to reset PASV on every PORT
+# added "magic" user with built-in destination
+# added some argument pointer fortification
+#
+# Revision 1.2  1999/09/21 07:13:07  wiegand
+# syslog / abort cleanup and review
+#
+# Revision 1.1  1999/09/15 14:06:22  wiegand
+# initial checkin
+#
+##################################################################
+

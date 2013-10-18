@@ -1,0 +1,91 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.9">
+ <TITLE>The FTP-Proxy White Paper: Introduction</TITLE>
+ <LINK HREF="ftp-proxy-2.html" REL=next>
+
+ <LINK HREF="ftp-proxy.html#toc1" REL=contents>
+</HEAD>
+<BODY>
+<A HREF="ftp-proxy-2.html">Next</A>
+Previous
+<A HREF="ftp-proxy.html#toc1">Contents</A>
+<HR>
+<H2><A NAME="introduction"></A> <A NAME="s1">1. Introduction</A></H2>
+
+<P>*** Note: this document is work in progress and by no means complete.
+It is included just for the sake of "Release early and often." ***
+<P>
+<P>FTP-Proxy is a transparent, application-level proxy server for FTP
+connections, designed to protect FTP servers against attacks based
+on the FTP protocol.
+<P>Due to the dual TCP connection nature of the FTP protocol, special
+handling is required to allow secure transfers.  Data connections are
+usually opened by the FTP server (the FTP protocol specification calls
+this "active" transfers) or optionally by the FTP client ("passive"
+transfers).  The data ports to be used are determined dynamically and
+announced as part of the protocol.  This makes it very difficult for
+static packet filters to handle FTP correctly.
+<P>Most routers and firewalls know about this procedure when NAT is
+performed.  E.g. Linux provides a special kernel module for FTP (and
+other protocols).  However such code usually only works in "outbound"
+direction, allowing FTP access from the inner network to FTP servers
+on the outer network, but not in the other direction.
+<P>This is a design restriction: TCP/IP packets originating from the
+inner network can be marked with special information that allows
+for correct routing of response packets from the outer network.
+For instance, if a WWW client on host 192.168.168.27 on your internal
+network requests a web page from Web server 194.112.123.200, the
+router maintains internal information when it rewrites the headers
+of the request packets.  If a response packet arrives (with a "From"
+address of 194.112.123.200), the router is then able to replace the
+public IP address in the "To" field with the private IP address of
+the appropriate client, in this case 192.168.168.27.
+<P>Of course, if a connection originates from the outer network, the
+router does not have this additional information and it can't forward
+incoming IP packets since it has no idea which host on the inner
+network is to be addressed.  One solution could be to enable port
+forwarding on the router (if supported), so that FTP clients on the
+outer network could connect to port X on the router to reach server Y
+on the inner network, however this fails because of the restrictions
+in the FTP protocol outlined above.
+<P>A proxy server is an elegant way to circumvent these restrictions,
+but there are other benefits of using FTP-Proxy as well:
+<P>
+<P>
+<UL>
+<LI>Simple forwarding of all traffic destined for the inner FTP server
+leaves that server nearly as vulnerable as if it had a "direct"
+connection to the outer network (without the firewall in front of it).
+In that case the FTP server would still be open to Denial-of-Service
+and similar attacks on the IP level.
+
+As FTP-Proxy runs on the application level, it doesn't forward
+the original IP packets but only maintains the information within.
+For instance, a packet containing not only a valid FTP command but
+also information to exploit an FTP server's bugs will never reach
+the server because only the FTP command itself is forwarded, within
+a completely new IP packet.
+
+Of course, FTP-Proxy could be subject to an attack itself.  However,
+FTP-Proxy is much less complex than any current FTP server, has been
+designed with great care and performs chroot(), setuid() and setgid()
+to avoid such vulnerability.
+
+<P>
+</LI>
+<LI>Using a circuit-level proxy server like SOCKS requires that all FTP
+clients support SOCKS.  This seems to be too restrictive.  FTP-Proxy,
+on the other hand, is completely transparent to FTP clients because
+it is fully RFC 959 compliant.
+</LI>
+</UL>
+<P>
+<P>
+<HR>
+<A HREF="ftp-proxy-2.html">Next</A>
+Previous
+<A HREF="ftp-proxy.html#toc1">Contents</A>
+</BODY>
+</HTML>

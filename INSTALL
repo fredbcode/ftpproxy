@@ -1,0 +1,134 @@
+#
+# $Id: INSTALL,v 1.1 1999/09/15 14:06:22 wiegand Exp $
+#
+
+This file describes how to install the FTP-Proxy.
+FTP-Proxy is part of the SuSE Proxy-Suite.
+
+If you are planning to install this software from the source archive,
+you can simply execute the following steps:
+
+  cd <proxy-suite-top-dir>
+  ./configure   [options, see below]
+  make
+  cd ftp-proxy
+  su
+  make install
+
+and to install additional documentation:
+
+  make install.doc
+
+
+Further, the 'INST_ROOT' Makefile variable can be set to an
+directory, that you want to prepend to all bellow directory
+settings while installation, i.e. in RPM spec files:
+
+  INST_ROOT=$RPM_BUILD_ROOT make install
+
+
+Note:
+On some systems you may use 'gmake' or 'gnumake' instead of 'make'
+to compile successfully - yes, you need GNU make.
+
+The options in the 'configure' command above are the standard options
+for a GNU autoconf based installation, plus the following package
+specific ones (see also 'configure --help') :
+
+
+  --prefix=PREFIX         install architecture-independent files in PREFIX
+                          [/usr/local]
+
+  --exec-prefix=EPREFIX   install architecture-dependent files in EPREFIX
+                          [same as prefix]
+
+  --sbindir=DIR           system admin executables in DIR [EPREFIX/sbin]
+                          --> 'ftp-proxy' will be installed into
+                              $(sbindir)/ftp-proxy
+
+  --sysconfdir=DIR        read-only single-machine data in DIR [PREFIX/etc]
+                          --> 'ftp-proxy.conf' will be installed into the
+                              'proxy-suite' sub-directory of sysconfdir:
+                              $(sysconfdir)/proxy-suite/ftp-proxy.conf
+
+  --mandir=DIR            man documentation in DIR [PREFIX/man]
+                          --> manual pages will be installed into
+                              $(mandir)/man5 and $(mandir)/man8
+
+
+  used by the optional 'install.doc' Makefile target:
+
+  --datadir=DIR           read-only architecture-independent data in DIR
+                          [PREFIX/share]
+                          --> documentation will be installed into the
+                              'doc/proxy-suite' sub-directory of datadir.
+                          This directrory is also accessible via Makefile
+                          variable docdir=$(datadir)/doc/proxy-suite/
+                          You can override it using 'docdir=DIR make ...'
+
+
+  --enable-debug          enable generation of debugging output
+  --enable-ctags          enable generation of (c)tags files
+  --enable-static         enable static linkage (see note bellow)
+  --enable-warnings       enable compiler warnings
+                          --> enabled per default for gcc
+  --enable-so-linger      enable setting SO_LINGER socket option
+  --enable-proc-mods      enable (Linux) /proc diagnostic modules
+                          (not completely implemented yet)
+  --enable-rfc1579        enable RFC 1579 (FW-FTP) extensions
+                          (not completely implemented yet)
+  --enable-rfc2428        enable RFC 2428 (FTP for IPv6) extensions
+                          (not completely implemented yet)
+
+  --with-regex[=PATH]     compile in regular expressions support
+                          --> enabled, if possible to autodetect
+  --with-libwrap[=PATH]   compile in libwrap (TCP Wrapper) support
+                          --> enabled, if possible to autodetect
+  --with-libldap[=PATH]   compile in LDAP support
+  --with-crypt[=PATH]     compile in crypt support for encrypted
+                          password in user authentication
+                          --> enabled/autodetect, if ldap active
+<!-- SSL -->
+  --with-ssl[=PATH]       compile in SSL, Secure Socket Layer support
+                          (not completely implemented yet)
+<!-- /SSL -->
+
+
+Note:
+ - Static linkage (--enable-static) uses the -static option for gcc;
+   this enables at least static linking against additional libraries,
+   i.e. libwrap or libregex (if not a libc builtin).
+   Newer libc implementations, like glibc on Linux does not allow an
+   full static linkage. The main reason is the usage of dynamic NSS
+   (Name Service Switch) modules (implemented as shared libraries on
+   most systems). See also 'man nsswitch.conf' and /etc/nsswitch.conf
+   for  more informations.
+
+
+It is recommended to compile the program without debug for production
+environments, but debugging is anyway only used when switched on with
+the '-v <level>' command line switch.
+
+
+The next step after the installation, is to edit the configuration file.
+Please refer to the sample file, it is well documented. You may also
+want to consult the two manual pages ftp-proxy(8) and ftp-proxy.conf(5)
+for further informations.
+
+Last but not least there is an overview of all implemented syslog(3)
+message formats and tags, plus a white paper with a more in depth
+discussion of the concepts and ideas behind the FTP-Proxy.
+
+To use the FTP-Proxy, you should first decide how to activate it.
+You can either run it from the internet super daemon (inetd or xinetd)
+or as a daemon of its own. In the first case you have to edit the
+(x)inetd config file, in the latter case the 'ftp' entry must be
+removed from this file so that FTP-Proxy can open the port itself
+for listening.
+
+It is always a good idea to consider sending syslog(3) output to
+another machine, so an intruder will find it more difficult to
+wipe out his trail.
+
+Enjoy!
+

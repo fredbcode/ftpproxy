@@ -1,0 +1,47 @@
+#
+# $Id: CREDITS,v 1.4.2.1 2004/03/22 12:39:00 mt Exp $
+#
+# This file contains credit information.
+#
+# If you feel you should be included or mentioned
+# (for providing hints, patches, or other input)
+# then please feel free to drop us a note or patch
+# this file and send it to the authors.
+#
+# Volker Wiegand, September 1999
+#
+
+Lutz Pressler <Lutz.Pressler@SerNet.DE>
+	ftp-proxy: Use and semantics of AllowMagicUser.
+
+Marc Heuse <marc@suse.de>
+	common: Symlink-protecting debug/log files.
+
+Rogier Wolff <R.E.Wolff@BitWizard.nl>
+	idea and a first implementation of rand-usage for port bind's
+
+Antoniu-George Savu <santoniu@libertysurf.fr>
+	patch for infinite-loop bug in telnet control handling
+	patch for useless exit in socket_sck2addr and on client fork failure
+	patch for clean up the PID of a child in daemon array (MaxClients)
+
+Andrea Dell'Amico <adellam@link.it>
+	patch fixing a socket_sck2addr return value, a CTAGS_OPTS typo in
+	configure.in, changing config_int in config_bool for SockBindRand
+
+Stefan Landvoigt <Stefan.Landvoigt@gedas.de>
+	patch for FIONREAD problems on Solaris (broken pipe)
+
+Dirk Roloff <roloff@mecom.de>
+	patch fixing socket_gets to wait for a complete line if no EOL found
+
+Pascal Gienger <pg@finesse-net.de>
+	testing and patch for I_NREAD / FINOREAD problems on Solaris
+
+Ralph Tremmel <tremmel@mpia-hd.mpg.de>
+	testing of I_NREAD / FINOREAD problems on Solaris
+
+Juha Litola <juha.litola@elma.net>
+	initial implementation of UserNameRule regex checks,
+	pass-through support for RCMD command
+

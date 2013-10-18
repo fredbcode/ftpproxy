@@ -1,0 +1,692 @@
+############################################################
+#
+# $Id: configure.in,v 1.10.2.2 2005/01/10 11:35:01 mt Exp $
+#
+# Configuration template file (for use with GNU AutoConf)
+#
+# Author(s): Jens-Gero Boehm <jens-gero.boehm@suse.de>
+#            Pieter Hollants <pieter.hollants@suse.de>
+#            Marius Tomaschewski <mt@suse.de>
+#            Volker Wiegand <volker.wiegand@suse.de>
+#
+# This file is part of the SuSE Proxy Suite
+#            See also  http://proxy-suite.suse.de/
+#
+# This file is an input file used by the GNU "autoconf" program
+# to generate the file "configure", which is run during package
+# installation to configure the system for the local environment.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version
+# 2 of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the
+# Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+# Boston, MA 02111-1307, USA.
+#
+# A history log can be found at the end of this file.
+#
+
+AC_INIT(common/com-syslog.c)
+AC_CONFIG_HEADER(config.h)
+
+if test "${prefix}" = "NONE"; then
+	prefix=/usr/local
+fi
+if test "${exec_prefix}" = "NONE"; then
+	exec_prefix=$prefix
+fi
+
+# Hmmm, the following is a bit of a kludge ...
+#if test "${sysconfdir}" = "\${prefix}/etc"; then
+#	sysconfdir=$prefix/etc/proxy-suite
+#fi
+#if test "${mandir}" = "\${prefix}/man"; then
+#	mandir=$prefix/man
+#fi
+#if test "${sbindir}" = "\${exec_prefix}/sbin"; then
+#	sbindir=$exec_prefix/sbin
+#fi
+
+
+############################################################
+# setup compiler and machine dependent stuff
+############################################################
+
+AC_PROG_CC
+AC_PROG_INSTALL
+AC_PROG_MAKE_SET
+AC_PROG_RANLIB
+
+AC_PATH_PROG(AR, ar, ar)
+AC_PATH_PROG(RM, rm, rm)
+
+AC_AIX
+AC_ISC_POSIX
+AC_SYS_LARGEFILE
+
+AC_C_INLINE
+AC_C_CONST
+
+AC_CANONICAL_HOST
+AC_DEFINE_UNQUOTED(HOSTTYPE, "$host")
+
+#
+# set some known host-specific settings/defaults
+#
+case "$host" in
+	*-*-hpux*)
+		if test -z "$GCC"; then
+			CFLAGS="$CFLAGS -Ae"
+			CPPFLAGS="$CPPFLAGS -D_HPUX_SOURCE"
+		fi
+	;;
+	*-ibm-aix*)
+		if test -z "$GCC"; then
+			CFLAGS="$CFLAGS -qlanglvl=ansi"
+		fi
+	;;
+	*-*-linux*)
+	;;
+	*)
+	;;
+esac
+
+# ******************************************************
+# devel_only will be set to "yes" if developemenet only
+# options or not full implemented features are used
+# ******************************************************
+devel_only=no
+
+
+AC_MSG_CHECKING([whether to enable compiler warnings])
+AC_ARG_ENABLE(warnings,
+[  --enable-warnings       enable compiler warnings              [default=yes]])
+if test "$enable_warnings" != no ; then
+	case "$CC" in
+	gcc)
+		AC_MSG_RESULT(-W -Wall)
+		CFLAGS="$CFLAGS -W -Wall"
+		CPPFLAGS="$CPPFLAGS -Dlint"
+	;;
+	*)
+		AC_MSG_RESULT(n/a)
+		enable_warnings="n/a"
+	;;
+	esac
+else
+	enable_warnings="no"
+	AC_MSG_RESULT(no)
+fi
+
+AC_MSG_CHECKING([whether to enable static linkage])
+AC_ARG_ENABLE(static,
+[  --enable-static         enable static linkage                 [default=no ]])
+if test "$enable_static" = yes ; then
+	if test -n "$GCC" && test "$GCC" = yes ; then
+		AC_MSG_RESULT(-static)
+		LDFLAGS="$LDFLAGS -static"
+	else
+		AC_MSG_RESULT(n/a)
+		enable_static="n/a"
+	fi
+else
+	enable_static="no"
+	AC_MSG_RESULT(no)
+fi
+
+AC_MSG_CHECKING(whether to enable debugging output)
+AC_ARG_ENABLE(debug,
+[  --enable-debug          enable generation of debugging output [default=no ]])
+if test "$enable_debug" = yes ; then
+	AC_MSG_RESULT(yes)
+	CPPFLAGS="$CPPFLAGS -DCOMPILE_DEBUG"
+	devel_only="yes"
+else
+	enable_debug="no"
+	AC_MSG_RESULT(no)
+fi
+
+AC_MSG_CHECKING(whether to generate (c)tags files)
+AC_ARG_ENABLE(ctags,
+[  --enable-ctags          generate (c)tags files                [default=no ]])
+if test "$enable_ctags" = yes ; then
+	AC_MSG_RESULT(yes)
+	AC_CHECK_PROGS(CTAGS, gnuctags ctags)
+	if test -n "$CTAGS"; then
+		test "$CTAGS" = gnutags && CTAG_OPTS="-w"
+	else
+		AC_MSG_ERROR(unable to find a ctags tool)
+	fi
+else
+	enable_ctags="no"
+	AC_MSG_RESULT(no)
+fi
+# allow overrige the default ctags file name
+test -n "$TAGS" || TAGS=tags
+
+
+############################################################
+# check for header files
+############################################################
+
+AC_CHECK_PROGS(SGML2HTML, sgml2html)
+AC_CHECK_PROGS(SGML2LATEX, sgml2latex)
+AC_CHECK_PROGS(PS2PDF, ps2pdf)
+
+############################################################
+# check for header files
+############################################################
+
+AC_HEADER_STDC
+AC_CHECK_HEADERS(unistd.h)
+AC_CHECK_HEADERS(memory.h)
+
+AC_CHECK_HEADERS(syslog.h)
+AC_MSG_CHECKING(whether sys/syslog.h is needed)
+AC_TRY_COMPILE([#include <syslog.h>],
+	[ int level = LOG_KERN; ],
+	AC_MSG_RESULT(no),
+	AC_MSG_RESULT(yes)
+	AC_DEFINE(NEED_SYS_SYSLOG_H)
+)
+
+AC_HEADER_TIME
+AC_CHECK_HEADERS(sys/time.h sys/select.h fcntl.h sys/fcntl.h)
+AC_CHECK_HEADERS(sys/filio.h sys/param.h sys/conf.h sys/sockio.h)
+AC_CHECK_HEADERS(paths.h stropts.h)
+
+AC_CHECK_HEADERS(net/if.h net/pfvar.h netinet/in_systm.h)
+AC_CHECK_HEADERS(netinet/ip.h netinet/ip_fil.h netinet/ip_nat.h)
+AC_CHECK_HEADERS(netinet/ip_compat.h netinet/ip_fil_compat.h)
+
+AC_CHECK_HEADERS(linux/netfilter_ipv4.h)
+
+AC_HEADER_SYS_WAIT
+
+
+############################################################
+# check for specific functions
+############################################################
+
+AC_FUNC_WAIT3
+AC_CHECK_FUNCS(waitpid)
+AC_CHECK_FUNCS(setsid)
+
+AC_CHECK_FUNCS(snprintf)
+AC_CHECK_FUNCS(vsnprintf)
+
+dnl AC_CHECK_FUNCS(getdomainname)
+
+############################################################
+# check for types to be defined
+############################################################
+
+AC_TYPE_MODE_T
+AC_TYPE_PID_T
+AC_TYPE_SIZE_T
+AC_TYPE_UID_T
+AC_TYPE_SIGNAL
+
+AC_CHECK_TYPE(u_int16_t, unsigned short)
+AC_CHECK_TYPE(u_int32_t, unsigned int)
+
+
+############################################################
+# check for libraries to scan
+############################################################
+
+#AC_CHECK_LIB(compat, main)
+AC_CHECK_LIB(socket, connect)
+AC_CHECK_FUNC(gethostbyname,,[
+  AC_CHECK_LIB(nsl, gethostbyname,,[
+    AC_CHECK_LIB(resolv, gethostbyname)])])
+AC_CHECK_FUNC(inet_aton,,[
+  AC_CHECK_LIB(nsl, inet_aton,,[
+    AC_CHECK_LIB(resolv, inet_aton)])])
+
+############################################################
+# check whether to enable /proc modules
+############################################################
+
+AC_MSG_CHECKING(whether to enable Linux /proc diagnostic module)
+AC_ARG_ENABLE(proc-mods,
+[  --enable-proc-mods      enable Linux /proc module             [default=n/a]])
+PROC_FTP=""
+if test "$enable_proc_mods" = yes ; then
+	case "$host" in
+	*-*-linux*)
+		AC_MSG_RESULT(yes)
+		PROC_FTP="proc_ftp.o"
+		AC_MSG_WARN(*** linux /proc module is not complete yet)
+		devel_only=yes
+	;;
+	*)
+		AC_MSG_RESULT(n/a)
+		AC_MSG_ERROR(/proc module not avaliable on $host)
+	;;
+	esac
+else
+	enable_proc_mods="no"
+	AC_MSG_RESULT(no)
+fi
+
+
+############################################################
+# check whether to enable RFC 1579 handling
+############################################################
+
+AC_MSG_CHECKING(whether to enable RFC 1579 FW-FTP extensions)
+AC_ARG_ENABLE(rfc1579,
+[  --enable-rfc1579        enable RFC 1579 FW-FTP extensions     [default=n/a]])
+if test "$enable_rfc1579" = yes ; then
+	AC_MSG_RESULT(yes)
+	AC_DEFINE(ENABLE_RFC1579)
+	AC_MSG_WARN(*** RFC 1579 FW-FTP extensions are not complete yet)
+	devel_only=yes
+else
+	enable_rfc1579="no"
+	AC_MSG_RESULT(no)
+fi
+
+
+############################################################
+# check whether to enable  RFC 2428 handling
+############################################################
+
+AC_MSG_CHECKING(whether to enable RFC 2428 IPv6 extensions)
+AC_ARG_ENABLE(rfc2428,
+[  --enable-rfc2428        enable RFC 2428 IPv6 extensions       [default=n/a]])
+if test "$enable_rfc2428" = yes ; then
+	AC_MSG_RESULT(yes)
+	AC_DEFINE(ENABLE_RFC2428)
+	AC_MSG_WARN(*** RFC 1579 IPv6 extensions are not complete yet)
+	devel_only=yes
+else
+	enable_rfc2428="no"
+	AC_MSG_RESULT(no)
+fi
+
+
+############################################################
+# check whether to enable SO_LINGER
+############################################################
+
+AC_MSG_CHECKING(whether to enable SO_LINGER socket options)
+AC_ARG_ENABLE(so-linger,
+[  --enable-so-linger      enable SO_LINGER socket option        [default=no ]])
+if test "$enable_so_linger" = yes ; then
+	AC_MSG_RESULT(yes)
+	AC_DEFINE(ENABLE_SO_LINGER)
+else
+	enable_so_linger="no"
+	AC_MSG_RESULT(no)
+fi
+
+
+############################################################
+# check whether to compile in POSIX RegEx support
+############################################################
+
+AC_MSG_CHECKING(whether to use regular expressions)
+AC_ARG_WITH(regex,
+[  --with-regex[=PATH]       compile in RegEx support            [default=yes]])
+case "$with_regex" in
+	no)
+		AC_MSG_RESULT(no)
+	;;
+	yes|"")
+		AC_MSG_RESULT(yes)
+		AC_CHECK_FUNC(regcomp, [
+			AC_DEFINE(HAVE_REGEX)
+			with_regex="yes"
+			], [
+			AC_CHECK_LIB(regex, regcomp, [
+				LIB_REGEX="-lregex"
+				AC_DEFINE(HAVE_REGEX)
+				with_regex="yes"
+			], [
+				# fail if explicitely requested....
+				if test "$with_regex" = yes ; then
+				AC_MSG_ERROR(unable to find regex support)
+				fi
+				with_regex="no"
+			])
+		])
+	;;
+	*)
+		AC_MSG_RESULT(yes)
+		AC_DEFINE(HAVE_REGEX)
+		if test -d "$withval"; then
+			LIB_REGEX="-L$withval -lregex"
+		else
+			LIB_REGEX="$withval"
+		fi
+		OLDLIBS="$LIBS"
+		LIBS="$LIB_REGEX $LIBS"
+		AC_TRY_LINK([],
+			[ regcomp(); ],,
+			[ AC_MSG_ERROR(unable to find libregex) ]
+		)
+		LIBS="$OLDLIBS"
+	;;
+esac
+
+
+############################################################
+# check whether to compile in TCP Wrapper support
+############################################################
+
+AC_MSG_CHECKING(whether to use libwrap TCP wrapper)
+AC_ARG_WITH(libwrap,
+[  --with-libwrap[=PATH]     compile in TCP wrapper support      [default=yes]])
+case "$with_libwrap" in
+	no)
+		AC_MSG_RESULT(no)
+	;;
+	yes|"")
+		AC_MSG_RESULT(yes)
+		AC_CHECK_LIB(wrap, request_init, [
+			LIB_WRAP="-lwrap"
+			AC_DEFINE(HAVE_LIBWRAP) ]
+		)
+		# fail if explicitely requested
+		if test "$with_libwrap" = yes ; then
+			test "$ac_cv_func_regcomp" != yes && \
+			AC_MSG_ERROR(unable to find tcp wrapper support)
+		fi
+		with_libwrap="yes"
+	;;
+	*)
+		AC_MSG_RESULT(yes)
+		AC_DEFINE(HAVE_LIBWRAP)
+		if test -d "$withval"; then
+			LIB_WRAP="-L$withval -lwrap"
+		else
+			LIB_WRAP="$withval"
+		fi
+		OLDLIBS="$LIBS"
+		LIBS="$LIB_WRAP $LIBS"
+		AC_TRY_LINK([ int allow_severity;
+			      int deny_severity; ],
+			[ hosts_access(); ],
+			[],
+			[ AC_MSG_ERROR(unable to find libwrap) ]
+		)
+		LIBS="$OLDLIBS"
+	;;
+esac
+
+
+############################################################
+# check whether to compile in LDAP support
+############################################################
+
+AC_MSG_CHECKING(whether to use LDAP support)
+AC_ARG_WITH(libldap,
+[  --with-libldap[=PATH]     compile in LDAP support             [default=no ]])
+case "$with_libldap" in
+	no|"")
+		AC_MSG_RESULT(no)
+		with_libldap="no"
+		;;
+	yes)
+		AC_MSG_RESULT(yes)
+		# check ldap and lber libs
+		AC_CHECK_LIB(ldap, ber_init, [
+			LIB_LDAP="-lldap"
+			AC_DEFINE(HAVE_LIBLDAP)
+			with_libldap="yes"
+		], [
+			AC_CHECK_LIB(lber, ber_init, [
+				LIB_LDAP="-lldap -llber"
+				AC_DEFINE(HAVE_LIBLDAP)
+				with_libldap="yes"
+			], [
+				AC_MSG_ERROR(unable to find ldap support)
+			])
+		])
+		# check some ldap features
+		OLDLIBS="$LIBS"
+		LIBS="$LIB_LDAP $OLDLIBS"
+		AC_CHECK_FUNCS(ldap_set_option ldap_get_option ldap_get_lderrno)
+		LIBS="$OLDLIBS"
+	;;
+	*)
+		AC_MSG_RESULT(yes)
+		if test -d "$withval"; then
+			LIB_LDAP="-L$withval -lldap"
+		else
+			LIB_LDAP="$withval"
+		fi
+		OLDLIBS="$LIBS"
+		LIBS="$LIB_LDAP $OLDLIBS"
+		AC_MSG_CHECKING([for ber_init in $LIB_LDAP])
+		AC_TRY_LINK([void* ber_init(void *); ], [
+			ber_init(0); ], [
+			AC_MSG_RESULT(yes)
+			AC_DEFINE(HAVE_LIBLDAP)
+			with_libldap="yes"
+		], [
+			AC_MSG_RESULT(no)
+			LIB_LDAP="$LIB_LDAP -llber"
+			LIBS="$LIB_LDAP $OLDLIBS"
+			AC_MSG_CHECKING([for ber_init in $LIB_LDAP])
+			AC_TRY_LINK([void* ber_init(void *); ], [
+				ber_init(0); ], [
+				AC_MSG_RESULT(yes)
+				AC_DEFINE(HAVE_LIBLDAP)
+				with_libldap="yes"
+			], [
+				AC_MSG_RESULT(no)
+				AC_MSG_ERROR(Could not find libldap)
+			])
+		])
+		# check more ldap features
+		AC_CHECK_FUNCS(ldap_set_option ldap_get_option ldap_get_lderrno)
+		LIBS="$OLDLIBS"
+	;;
+esac
+
+
+############################################################
+# check whether to compile in crypt support
+############################################################
+
+if test x$with_libldap = xyes ; then
+AC_MSG_CHECKING(whether to use crypt passwd support)
+AC_ARG_WITH(crypt,
+[  --with-crypt[=PATH]       compile in crypt support            [default=no ]])
+case "$with_crypt" in
+	no)
+		AC_MSG_RESULT(no)
+	;;
+	yes|"")
+		AC_MSG_RESULT(yes)
+		AC_CHECK_FUNC(crypt, [
+			AC_DEFINE(HAVE_CRYPT)
+			with_crypt="yes"
+		], [
+			AC_CHECK_LIB(crypt, crypt, [
+				LIB_CRYPT="-lcrypt"
+				AC_DEFINE(HAVE_CRYPT)
+				with_crypt="yes"
+			], [
+				# fail if explicitely requested....
+				if test "$with_crypt" = yes ; then
+				AC_MSG_ERROR(unable to find crypt support)
+				fi
+			])
+		])
+	;;
+	*)
+		AC_MSG_RESULT(yes)
+		if test -d "$withval"; then
+			LIB_CRYPT="-L$withval -lcrypt"
+		else
+			LIB_CRYPT="$withval"
+		fi
+		OLDLIBS="$LIBS"
+		LIBS="$LIB_CRYPT $LIBS"
+		AC_TRY_LINK([char *crypt(char *, char *); ],
+			[ crypt("", ""); ], [
+				AC_DEFINE(HAVE_CRYPT)
+				with_crypt="yes"
+			], [
+				AC_MSG_ERROR(unable to find libcrypt)
+		])
+		LIBS="$OLDLIBS"
+	;;
+esac
+else
+	with_crypt="no"
+fi
+
+
+# <!-- SSL -->
+############################################################
+# check whether to compile in SSL support
+############################################################
+
+AC_MSG_CHECKING(whether to use SSL (sftp) support)
+AC_ARG_WITH(ssl,
+[  --with-ssl[=PATH]         compile in SSL (sftp) support       [default=n/a]])
+if test "$with_ssl" = yes ; then
+	AC_MSG_RESULT(yes)
+	AC_DEFINE(ENABLE_SSL)
+	AC_MSG_WARN(*** SSL support (sftp) is not complete yet)
+	devel_only=yes
+else
+	with_ssl="no"
+	AC_MSG_RESULT(no)
+fi
+
+# <!-- /SSL -->
+
+############################################################
+# resolve some paths (needed i.e. for manual pages)
+############################################################
+
+eval SBINDIR=${sbindir}
+eval SYSCONFDIR=${sysconfdir}
+
+############################################################
+# Done, now generate the output files
+############################################################
+
+AC_SUBST(CC)
+AC_SUBST(OPT)
+AC_SUBST(DEFS)
+AC_SUBST(CFLAGS)
+AC_SUBST(CPPFLAGS)
+AC_SUBST(LDFLAGS)
+AC_SUBST(TAGS)
+AC_SUBST(CTAGS)
+AC_SUBST(CTAGS_OPTS)
+AC_SUBST(LIB_CRYPT)
+AC_SUBST(LIB_REGEX)
+AC_SUBST(LIB_WRAP)
+AC_SUBST(LIB_LDAP)
+AC_SUBST(PROC_FTP)
+AC_SUBST(BINDIR)
+AC_SUBST(SBINDIR)
+AC_SUBST(SYSCONFDIR)
+
+AC_OUTPUT(	Makefile			\
+		doc/Makefile			\
+		common/Makefile			\
+		ftp-proxy/Makefile		\
+		ftp-proxy/ftp-proxy.conf.5	\
+		ftp-proxy/ftp-proxy.8		\
+		ftp-proxy/rc.script		\
+	)
+
+if test "$verbose" = yes ; then
+echo ""
+echo "===== configuration summary ====="
+echo ""
+
+echo "compilation options  :"
+echo "  compiler flags     :  $CFLAGS"
+echo "  preprocessor flags :  $CPPFLAGS"
+echo "  linker flags       :  $LDFLAGS"
+echo "  libraries          :  $LIBS"
+echo "  additional libs    :  $LIB_CRYPT $LIB_REGEX $LIB_WRAP $LIB_LDAP $LIB_SSL"
+echo ""
+
+echo "options / features   :"
+echo "  ctags usage        :  $enable_ctags"
+echo "  so-linger option   :  $enable_so_linger"
+echo "  rfc1579, FW-FTP    :  $enable_rfc1579"
+echo "  rfc2428, IPv6      :  $enable_rfc2428"
+echo "  /proc module       :  $enable_proc_mods"
+echo ""
+echo "  regex support      :  $with_regex"
+echo "  tcp-wrapper        :  $with_libwrap"
+echo "  ldap support       :  $with_libldap"
+echo "  crypt support      :  $with_crypt"
+echo "  ssl support        :  $with_ssl"
+echo ""
+fi
+
+if test "$devel_only" != no ; then
+echo ""
+echo "***   developement-only options are enabled   ***"
+echo "*** !! do not use this build in production !! ***"
+echo ""
+fi
+
+
+############################################################
+# $Log: configure.in,v $
+# Revision 1.10.2.2  2005/01/10 11:35:01  mt
+# added sys/param.h to AC_CHECK_HEADERS
+#
+# Revision 1.10.2.1  2003/05/07 11:16:02  mt
+# fixed ldap and crypt library checks
+# moved defines from CFLAGS to CPPFLAGS
+# added OpenBSD pf-nat header checks
+#
+# Revision 1.10  2002/05/02 12:28:08  mt
+# added --with-crypt option for crypted passwords
+#
+# Revision 1.9.2.1  2002/04/04 09:53:50  mt
+# added large file support option
+# improved checks for common functions
+#
+# Revision 1.9  2002/01/14 19:46:58  mt
+# improved checks for enable/with options
+# added netfilter, BSD ipf/ipnat header checks
+#
+# Revision 1.8  2001/11/06 23:04:43  mt
+# applied / merged with transparent proxy patches v8
+# see ftp-proxy/NEWS for more detailed release news
+#
+# Revision 1.7  1999/10/19 11:19:03  wiegand
+# added -static as option for GCC
+#
+# Revision 1.6  1999/09/23 08:06:56  wiegand
+# code cleanup, added installation target
+#
+# Revision 1.5  1999/09/20 05:45:12  wiegand
+# added support for man pages
+#
+# Revision 1.4  1999/09/17 16:32:29  wiegand
+# changes from source code review
+# added POSIX regular expressions
+#
+# Revision 1.3  1999/09/15 14:08:03  wiegand
+# added doc directory to SUBDIRS
+#
+# Revision 1.2  1999/09/15 13:20:35  wiegand
+# new structure: with subdirectories
+#
+############################################################
+

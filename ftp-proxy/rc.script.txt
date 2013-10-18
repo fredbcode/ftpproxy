@@ -1,0 +1,101 @@
+
+  $Id: rc.script.txt,v 1.1.6.1 2004/03/30 12:04:16 mt Exp $
+
+  SuSE FTP-Proxy -- run level script
+  Marius Tomaschewski <mt@suse.de>
+
+
+  This version provides a *sample* LSB run-level script for
+  (SuSE) Linux: rc.script. It allows you to start the proxy
+  in daemon mode in a chroot runtime enviroment as well as
+  in "normal" standalone / daemon mode.
+  It also creates the complete chroot environment for you.
+
+  The run-level script is very blown and tries to handle
+  some different settings, like LogDestination, PidFile,
+  TCPWrapper, LDAPServer, User, Group, Messages.
+
+  If you do not like this script, write your own one :-)
+
+  Note: this script needs case-sensitive config variable
+        names - do not try to use ``serverroot创 instead
+        of ``ServerRoot创.
+
+  The script uses the ServerRoot chroot setting in the
+  ftp-proxy.conf configuration file and allows you to
+  use the built-in ftp-proxy to chroot mechanisms or via
+  external compartment tool by Marc Heuse.
+
+  The benefit of compartment usage is that compartment
+  cleanups the enviroment, does a chroot, changes the
+  group, sets kernel capabilities and _after_ all the
+  steps are done, executes the daemon inside of this
+  environment.
+  The daemon runs with in the chroot with dropped root
+  privileges, except of bind to a port lower than 1024
+  (server port) and is able to write to files owned by
+  himself (root).
+
+  If you decide to use the compartment tool, set (add)
+  the FTP_PROXY_CAPS variable to "yes".
+
+  The config steps in /etc/proxy-suite/ftp-proxy.conf:
+
+  * Set ``ServerType to创 'standalone' (otherwise the
+    script refuses to start).
+
+  * Set a directory with ``ServerRoot创, i.e. the
+    default directory '/var/lib/ftp-proxy/rundir'.
+
+  * Set a ``Group创, the proxy should run as (i.e.
+    'ftpproxy').
+
+  * Set a ``User创, the proxy should run as (i.e.
+    'ftpproxy').
+
+  * Set a ``LogDestination创. The proxy supports logging
+    to a pipe - the script doesn't support it, so you
+    have to use a file (i.e. '/var/log/ftp-proxy.log')
+    or a syslog facility (i.e. 'daemon').
+    If you are using a file, allways set an absolute name;
+    both, the script and the ftp-proxy need this.
+    If you are using a syslog facility, you have to say
+    syslogd to create a log-socket inside of the chroot
+    environment - simply add it to the SYSLOGD_PARMS
+    variable in /etc/rc.config, i.e.:
+    SYSLOGD_PARMS="-a /var/lib/ftp-proxy/rundir/dev/log"
+
+  * Set a ``DestinationAddress创 _OR_ enable the new
+    transparent proxying feature with ``AllowTransProxy创
+    (see TransProxy-Mini-Howto.txt).
+
+  * Make other settings you need/like...
+
+  That's all - now start the script with:
+
+      /sbin/rcftp-proxy chroot
+
+  and it will create a chroot enviroment for you with
+  all needed files (I hope ;-) inside. Now, you can
+  start the proxy with:
+
+      /sbin/rcftp-proxy start
+
+  and TEST if it does what you want - if not, read
+  the documentation and double-check your settings.
+
+  You can take a look into the configuration file inside
+  of the chroot environment (with the above settings it
+  is /var/lib/ftp-proxy/rundir/etc/proxy-suite/ftp-proxy.conf).
+  Some of your settings are not there (ServerRoot, User,
+  Group) if you are using compartment tool and not the
+  built-in chroot of the ftp-proxy (see above).
+
+  Please contact proxy-suite@suse.com if you have any ideas,
+  additions or corrections to this text, the script or the
+  ftp-proxy. You can also purchase support or consulting
+  services; contact solutions@suse.de or bsupport@suse.de.
+
+Don't forget to have fun,
+ Your SuSE Team.
+

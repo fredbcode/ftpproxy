@@ -1,0 +1,149 @@
+
+$Id: NEWS,v 1.4.2.5 2005/01/11 13:01:48 mt Exp $
+
+==================================================
+=== SuSE Proxy-Suite -- ftp-proxy release news ===
+==================================================
+
+* 1.9.2.4     - released 2005-01-11
+-----------------------------------
+ - fixed default UserNameRule regex rejecting user names
+   where the third character is not alphanumeric; thanks
+   to Sven Paas for the bug report!
+
+
+* 1.9.2.3     - released 2005-01-10
+-----------------------------------
+ - added sys/param.h to configure.in required to compile
+   on FreeBSD 6-CURRENT system; thanks to Thomas Quinot!
+
+
+* 1.9.2.2     - released 2004-03-30
+-----------------------------------
+ - added pass-through support for RCMD command -- jpl
+ - added LDAPPreBindDN, LDAPPreBindDNPW options useable
+   instead of an anonymous bind while LDAPBindDN=auto
+ - added a UserNameRule option allowing a regex based
+   override of the hard coded user name checks
+   Thanx for initial implementation to Juha Litola!
+ - changed awk,grep,logger paths to /bin and ServerRoot
+   to /var/lib/ftp-proxy/rundir (/var/ftp-proxy/rundir)
+   in rc-script and config samples
+
+
+* 1.9.2.1     - released 2003-05-11
+-----------------------------------
+ - improved user-auth to allow auth using ldap-bind as well
+ - improved parsing of the ftp USER command magic strings
+   to allow email-adresses as username if UseMagicChar is @.
+ - removed broken ABOR on error while srv_data xfer still runs
+ - fixed to use hls->retr instead of a static retry counter
+ - applied OpenBSD pf-nat transparent proxy support patch
+   by Matt Messier <mmessier@prilnari.com> - thanx Matt!
+
+
+* 1.9         - released 2002-05-02
+-----------------------------------
+ - implemented user authentication - currently ldap based only
+ - updated documentation, merged with v1.8.2.2 fixes
+
+
+* 1.8.2.2     - released 2002-04-23
+-----------------------------------
+ - transfer recv abort race conditions arround I_NREAD / FINOREAD
+   observed in particular on Solaris should be catched propelly now
+ - fixed permissions of debug-file as documented in ftp-proxy(8)
+
+
+* 1.8.2.1     - released 2002-04-04
+-----------------------------------
+ - fixed Makefiles to use INST_ROOT, added install.doc targed
+ - implemented config file wildcard-section names matching
+ - minor and cosmetic fixes from patches flying arround
+
+
+* 1.8.0       - released 2002-01-14
+-----------------------------------
+ - implemented transparent proxying support for Linux ipchains/iptables
+   and BSD ipf/ipnat - read description in TransProxy-Mini-Howto.txt
+ - implemented workarround for Netscape (4.x) to access directories
+   via symbolic link (see also new FailResetsPasv config option)
+ - implemented LDAPBindDN and LDAPBindPW simple bind authorization
+ - fixed ld_errno fetching macro to work with openldap 2.x
+ - fixed build-in chroot and uid/gid dropping - now, the whole daemon
+   runs in the chroot; log is written with uid/gid set in config file
+ - fixed socket_gets to wait for a complete line if no EOL found
+ - added MaxRecvBufSiz config option allowing to limit the revc buffer
+ - added LogLevel config option allowing to set the maximal level
+ - extended log messages to provide basic transfer statistics data
+ - extended / improved auto-configure checks for better portability
+ - actualized manual pages, mini-howto's and installation description
+
+
+* 1.7.8 (tp8) - released 2001-09-19
+-----------------------------------
+ - fixed sample run level script to be LSB compliant (I hope it is now)
+ - added Solaris FIONREAD (broken pipe) patch from Stefan Landvoigt
+
+
+* 1.7.7 (tp7) - released 2001-06-20
+-----------------------------------
+ - the proxy uses ip address fetched with getsockname from the control
+   socket to the client for data communications. In transparent mode,
+   this may cause problems with ip filters, because getsockname returns
+   the address of the ftp server the client means it is connected to
+   (see also "netstat -atn" output).
+   Now, the proxy prefers to use the IP set via listen in the config;
+   if no Listen is set, ip address from getsockname is used, so "Listen"
+   and in some environments also TranslatedAddress should be set.
+ - added socket_sck2addr CTAGS_OPTS typo and SockBindRand config_int
+   vs. config_bool patch from Andrea. thanx!
+
+
+* 1.7.6 (tp6) - released 2001-06-05
+-----------------------------------
+   - added sample rc.config.ftp-proxy and rc.script.ftp-config
+   - implemented LDAPBindDN, LDAPBindPW for authenticated simple bind
+   - autoconf ctags, ftp-proxy.conf.sample cleanups
+   - fixed QUIT to be allowed every time
+   - fixed pid file creation order to be before UID 0 is dropped
+   - fixed ActivePort default to be INPORT_ANY (random port)
+     if not running as UID 0 (root) instead of IPPORT_FTP - 1 (port 20)
+     an no ActiveMinDataPort/ActiveMaxDataPort given
+   - fixed (I hope ;-) bind/connect problems (see also SockBindRand option)
+   - added patch for infinite-loop bug in telnet control handling
+   - added patch for unneeded exit in socket_sck2addr and on client fork failure
+   - added patch for clean up the PID of a child in daemon array (MaxClients)
+   - added contributors to CREDITS file
+   - updated manual page (ftp-proxy.conf.5.in)
+
+
+* 1.7.5 (tp5) - released 2000-10-08
+-----------------------------------
+ - autoconf cleanups - tested on linux, freebsd4.0 and solaris7
+ - added UseMagicChar config keyword to support other characters
+   than @ as user separators in "AllowMagicUser" mode.
+
+
+* 1.7.4 (tp4) - released 2000-10-03
+-----------------------------------
+ - changed log file opening to rename the log file if it already
+   exists instead of delete it :-)
+
+
+* 1.7.3 (tp3) - released 2000-09-22
+-----------------------------------
+ - fixed ugly daemon-mode bug killing all proxy instances on QUIT
+
+
+* 1.7.2 (tp2) - released 2000-07-14
+-----------------------------------
+ - added checks if destination is a local address;
+   transparent proxying should work fine now
+
+
+* 1.7.1 (tp1) - released 2000-07-01
+-----------------------------------
+ - first implementation of transparent proxying
+
+

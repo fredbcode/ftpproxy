@@ -1,0 +1,190 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.9">
+ <TITLE>The FTP-Proxy White Paper: Logging and Auditing</TITLE>
+ <LINK HREF="ftp-proxy-10.html" REL=next>
+ <LINK HREF="ftp-proxy-8.html" REL=previous>
+ <LINK HREF="ftp-proxy.html#toc9" REL=contents>
+</HEAD>
+<BODY>
+<A HREF="ftp-proxy-10.html">Next</A>
+<A HREF="ftp-proxy-8.html">Previous</A>
+<A HREF="ftp-proxy.html#toc9">Contents</A>
+<HR>
+<H2><A NAME="logging"></A> <A NAME="s9">9. Logging and Auditing</A></H2>
+
+<P>All possible log messages with their exact wording have been
+collected and listed in the file <EM>SYSLOG</EM> which is part
+of the FTP-Proxy distribution.  You can find it in the
+<EM>ftp-proxy</EM> subdirectory.
+<P>
+<P>The FTP-Proxy logs can be sent to a file, to a pipe, or to the
+<EM>syslogd(8)</EM> daemon for further evaluation and handling.
+It is strongly recommended to use syslog because it is the only
+way to send logging messages to another machine as they are
+generated.
+<P>
+<P>This off shore logging is especially important for FTP-Proxy
+servers located in exposed areas, like the Demilitarized Zone
+of a firewall.  Anything that is stored on the computer itself
+can easily be manipulated in the case of a hostile takeover.
+And when the auditor stops by on his weekly audit tour, all
+traces have long since been wiped out.
+In order to implement remote logging the <EM>syslog.conf(5)</EM>
+file has to include an entry for the selected facility using a
+target starting with the letter '@' followed by the DNS name
+or IP address of the external log host.  Usually this loghost
+may be not part of the DMZ, but be located on the intranet or
+dedicated administration network.
+The UDP syslog traffic is then allowed to pass through the
+internal firewall router.  Note that the syslogd on the log
+host usually has to be started with the "<EM>-r</EM>" option
+to enable the reception of logging information from another
+machine.
+<P>
+<P>The FTP-Proxy syslog messages have been created in a way that
+should ease the task of scanning and evaluating.  Each message
+contains a tag that can easily be recognized.  It consists
+of a prefix that is either <EM>TECH</EM> or <EM>USER</EM>,
+followed by a hyphen and one of <EM>DBG</EM>, <EM>INF</EM>,
+<EM>WRN</EM>, <EM>ERR</EM>, or <EM>FTL</EM>.
+<P>
+<P>Using the <CODE>LogLevel</CODE> configuration option, you can
+skip message levels not interesting for you. For example,
+<PRE>
+LogLevel  WRN
+</PRE>
+ will cause skipping of all
+<EM>DBG</EM> and <EM>INF</EM> messages and displaying only
+the <EM>WRN</EM>, <EM>ERR</EM> and <EM>FLT</EM> level
+messages. Default level is <EM>INF</EM> - no <EM>DBG</EM>
+messages will get logged.
+<P>
+<P>The possible combinations can be interpreted as follows:
+<P>
+<PRE>
+TECH-DBG
+</PRE>
+
+<BLOCKQUOTE>
+Messages with this tag carry some technical informations usefull
+for diagnostics purposes with no need to react to them.
+</BLOCKQUOTE>
+<P>
+<PRE>
+TECH-INF
+</PRE>
+
+<BLOCKQUOTE>
+Messages with this tag carry some technical information with
+no need to react to them.  They might display the contents of
+the configuration file or the start or stop of the program.
+These messages are generated with the <EM>INFO</EM> syslog
+severity.
+</BLOCKQUOTE>
+<P>
+<PRE>
+TECH-WRN
+</PRE>
+
+<BLOCKQUOTE>
+Messages with this tag display some mild technical problem
+or inconsistency.  E.g. a configuration variable with no
+value given or a temporary resource shortage would be sent
+in this context.  Also if an FTP server closed a connection
+without being instructed by the client or proxy would generate
+this kind of message.  These messages are generated with the
+<EM>WARNING</EM> syslog severity.
+</BLOCKQUOTE>
+<P>
+<PRE>
+TECH-ERR
+</PRE>
+
+<BLOCKQUOTE>
+Messages with this tag usually mean a severe error condition
+that will lead to the termination of the emitting process.
+Problems that fall under this category include the inability
+to open the configuration file, internal security handling,
+network problems like ports already in use by other processes,
+input/output errors or other communication faults.  It is
+strongly advised that all such messages shall be investigated
+and further action is taken.  These messages are generated with
+the <EM>ERROR</EM> syslog severity.
+</BLOCKQUOTE>
+<P>
+<PRE>
+TECH-FTL
+</PRE>
+
+<BLOCKQUOTE>
+Messages with this tag should be very rare.  They are reserved
+for really weird situations which reveal bugs in the internal
+FTP-Proxy programming.  Please report any such occurrance to
+the Proxy-Suite development team, it requires the programmer's
+attention.  These messages are generated with the <EM>CRIT</EM>
+syslog severity.
+</BLOCKQUOTE>
+<P>
+<P>
+<PRE>
+USER-DBG
+</PRE>
+
+<BLOCKQUOTE>
+Messages with this tag are currently not being used.
+</BLOCKQUOTE>
+<P>
+<PRE>
+USER-INF
+</PRE>
+
+<BLOCKQUOTE>
+Messages with this tag will be the majority of all messages.
+They are generated for all regular user actions like logging
+in, sending commands and transfer statistics.  Their main
+purpose is to provide a complete audit trail for every user
+interaction.  These messages are generated with the <EM>INFO</EM>
+syslog severity.
+</BLOCKQUOTE>
+<P>
+<PRE>
+USER-WRN
+</PRE>
+
+<BLOCKQUOTE>
+Messages with this tag indicate some sort of unforeseen user
+action, but need not be taken too seriously.  Only if there is
+a pattern of regular or frequent messages of this kind, you
+might want to look a bit closer.  These messages are generated
+with the <EM>WARNING</EM> syslog severity.
+</BLOCKQUOTE>
+<P>
+<PRE>
+USER-ERR
+</PRE>
+
+<BLOCKQUOTE>
+Messages with this tag mean that the user has been rejected.
+Currently no other message has been defined with this tag,
+although this might be changed in the future. These messages
+are generated with the <EM>ERROR</EM> syslog severity.
+</BLOCKQUOTE>
+<P>
+<PRE>
+USER-FTL
+</PRE>
+
+<BLOCKQUOTE>
+Messages with this tag are currently not being used.
+</BLOCKQUOTE>
+<P>
+<P>
+<P>
+<HR>
+<A HREF="ftp-proxy-10.html">Next</A>
+<A HREF="ftp-proxy-8.html">Previous</A>
+<A HREF="ftp-proxy.html#toc9">Contents</A>
+</BODY>
+</HTML>

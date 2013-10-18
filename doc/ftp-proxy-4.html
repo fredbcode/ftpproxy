@@ -1,0 +1,63 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.9">
+ <TITLE>The FTP-Proxy White Paper: Local System Security</TITLE>
+ <LINK HREF="ftp-proxy-5.html" REL=next>
+ <LINK HREF="ftp-proxy-3.html" REL=previous>
+ <LINK HREF="ftp-proxy.html#toc4" REL=contents>
+</HEAD>
+<BODY>
+<A HREF="ftp-proxy-5.html">Next</A>
+<A HREF="ftp-proxy-3.html">Previous</A>
+<A HREF="ftp-proxy.html#toc4">Contents</A>
+<HR>
+<H2><A NAME="security"></A> <A NAME="s4">4. Local System Security</A></H2>
+
+<P>FTP-Proxy comes with several configuration features that help
+to increase local system security, namely <CODE>ServerRoot</CODE>,
+<CODE>User</CODE> and <CODE>Group</CODE>.
+<P>
+<P>The way FTP-Proxy is being called needs to be considered.  One
+possible way is via the system's inetd (or xinetd) Internet Super
+Daemon.  In this case FTP-Proxy will not fork or become a daemon.
+It will serve the client and terminate itself after delivery.
+When configuring (x)inetd to include the ftp-proxy executable,
+<CODE>ServerRoot</CODE> (chroot) should be used.
+The <CODE>User</CODE> and <CODE>Group</CODE> need not be given if they
+are specified in the inetd configuration itself.
+<P>
+<P>The <CODE>User</CODE> and <CODE>Group</CODE> options should actually be
+considered for standalone operations. In this case the ftp-proxy
+will bind the listening socket to the port number set using the
+<CODE>Port</CODE> and <CODE>Listen</CODE> options, preform the chroot
+operation if <CODE>ServerRoot</CODE> is used, drop privileges to
+the UID/GID set with <CODE>User</CODE> and <CODE>Group</CODE> options
+and open log.
+<P>
+<P>It might be a good idea to create a new user (e.g. "ftpproxy")
+as well as a group (e.g. "ftpproxy") in order to reach a better
+granularity for the user administration.
+<P>
+<P>When using <CODE>ServerRoot</CODE>, please note that usually other
+files needs to be installed into the runtime environment as well,
+e.g. the /dev/null device, system databases like /etc/services,
+/etc/hosts, libraries like libc and possibly other (e.g. libcrypt
+under AIX 4.3, a resolver library like libresolv or libnss
+libraries on systems using the NameServiceSwitch - see also
+nsswitch.conf(5)).
+If you are using the <CODE>User</CODE> and <CODE>Group</CODE> options,
+you may also need the /etc/passwd and /etc/group files.
+<P>
+<P>The sample run level script <CODE>rc.script</CODE> for (SuSE)
+Linux supports the preparation of a chroot runtime
+environment - see description in <CODE>rc.script.txt</CODE>.
+<P>
+<P>
+<P>
+<HR>
+<A HREF="ftp-proxy-5.html">Next</A>
+<A HREF="ftp-proxy-3.html">Previous</A>
+<A HREF="ftp-proxy.html#toc4">Contents</A>
+</BODY>
+</HTML>

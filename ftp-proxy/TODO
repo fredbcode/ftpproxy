@@ -1,0 +1,32 @@
+#
+# $Id: TODO,v 1.4 2002/05/02 13:11:20 mt Exp $
+#
+
+*	Implement a destination control (using TCP wrapper?)
+	used in transparent proxy and magic user modes
+
+*	Implement a simple bandwidth limiter
+
+*	Implement APSV as defined in rfc1579:
+	 - Client sends APSV (all passive) on begin of a session
+	 - Proxy allways does a passive open (on client-side)
+	   if not preceded by an explicite PORT or PASV
+	 - Proxy sends CODE 151 (IP+port) as response for all
+	   file transfer requests not preceded by a PORT or PASV
+	 - PORT overrides APSV-mode for next transfer operation
+
+*	Implement IPv6 FTP extensions as defined in rfc2428
+
+*	Include support for Kerberos.
+
+*	Allow also scp (Secure Copy) for both the client and
+	server connection.
+
+*	Include support for SSL (the OpenSSL example code
+	includes an FTP client and server).
+	Alas, the legal implications have to be considered !!!
+
+*	Find a way to base the per user rules retrieved from
+	an LDAP server not only on the user name, but also
+	on the client address (with variable masks).
+

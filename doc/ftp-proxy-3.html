@@ -1,0 +1,59 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.9">
+ <TITLE>The FTP-Proxy White Paper: Configuration</TITLE>
+ <LINK HREF="ftp-proxy-4.html" REL=next>
+ <LINK HREF="ftp-proxy-2.html" REL=previous>
+ <LINK HREF="ftp-proxy.html#toc3" REL=contents>
+</HEAD>
+<BODY>
+<A HREF="ftp-proxy-4.html">Next</A>
+<A HREF="ftp-proxy-2.html">Previous</A>
+<A HREF="ftp-proxy.html#toc3">Contents</A>
+<HR>
+<H2><A NAME="config"></A> <A NAME="s3">3. Configuration</A></H2>
+
+<P>The following section describes the fundamental configuration
+of the FTP-Proxy. It assumes, that you have successfully
+compiled and installed the FTP-Proxy.
+<P>The proxy uses a configuration file <EM>ftp-proxy.conf</EM>
+you have to edit before the proxy can be used - it is needed
+to configure at least the variables described in this section.
+For a complete list of valid configuration options consult
+the <EM>ftp-proxy.conf(5)</EM> manual page and the sample
+configuration file <EM>ftp-proxy.conf.sample</EM> file
+which comes with the distribution.
+<P>
+<P>First, you have to choose, if you wand to start the proxy
+as a stand-alone daemon or via "(x)inetd" super daemon using
+the <CODE>ServerType</CODE> configuration option (or the start
+arguments). If nothing specified, "inetd" mode is assumed.
+See also section 
+<A HREF="ftp-proxy-4.html#security">Local System Security</A>.
+In stand-alone daemon mode, the proxy defaults to listen on the
+FTP port 21 and all interfaces. You can override this using the
+<CODE>Port</CODE> and <CODE>Listen</CODE> configuration options.
+<P>The next step you have to do, is to choose, if the Proxy should
+run in "inbound" or in "outbound" mode. See the section
+<A HREF="ftp-proxy-5.html#traffic">Inbound and Outbound FTP Traffic</A>.
+<P>
+<P>Now, the proxy should be able to run and serve the client requests.
+The proxy follows the FTP transfer mode the client has choosed.
+<P>You can override this behaviour setting the option
+<CODE>DestinationTransferMode</CODE> to either <EM>active</EM> or
+<EM>passive</EM> instead of the default <EM>client</EM>, and
+the proxy will be forced to use the specified FTP transfer mode
+for all transfers it does between the proxy and the ftp server.
+Most common usage is to force the proxy to use <EM>passive</EM>
+transfers only.
+<P>
+<P>
+<P>
+<P>
+<HR>
+<A HREF="ftp-proxy-4.html">Next</A>
+<A HREF="ftp-proxy-2.html">Previous</A>
+<A HREF="ftp-proxy.html#toc3">Contents</A>
+</BODY>
+</HTML>
