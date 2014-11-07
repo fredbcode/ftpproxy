@@ -737,22 +737,24 @@ static int ldap_fetch(LDAP *ld, CONTEXT *ctx, char *who, char *pwd)
 #endif
 	}
 
-/* 	Fred Patch Add Timeout in ftpclient.c
-/*	p = ldap_attrib(ld, e, "TimeOut", "900");
+// Fred Patch Add Timeout in ftpclient.c
+
+	p = ldap_attrib(ld, e, "TimeOut", "900");
 	if(NULL != p) {
 		if (*p >= '0' && *p <= '9')
-			ctx->timeout = atoi(p);
-		else
-			ctx->timeout = 900;
+		ctx->timeout = atoi(p);
+	else
+		ctx->timeout = 900;
+
 #if defined(COMPILE_DEBUG)
-		debug(2, "TimeOut for %s: %d", ctx->cli_ctrl->peer,
-		         ctx->timeout);
-#endif 
-	}
+	debug(2, "TimeOut for %s: %d", ctx->cli_ctrl->peer,
+	ctx->timeout);
+#endif
+}
+/*
+** Adjust the allow/deny flags for the commands
 */
-	/*
-	** Adjust the allow/deny flags for the commands
-	*/
+
 	p = ldap_attrib(ld, e, "ValidCommands", NULL);
 	if(NULL != p) {
 		cmds_set_allow(p);
@@ -825,7 +827,7 @@ static int   ldap_auth(LDAP *ld, LDAPMessage *e, char *who, char *pwd, CONTEXT *
 		syslog_write(T_DBG, "[ %s ] LDAP auth ok-check skipped",ctx->cli_ctrl->peer);
 		// Patch Fred 1 partie //
 		patch_ldapgroup(ld,who,ctx);
-		}
+	}
 
 	/*
 	** check user pass match

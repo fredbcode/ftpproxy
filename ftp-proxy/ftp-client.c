@@ -665,7 +665,7 @@ static void client_cli_ctrl_read(char *str)
 
 static void client_srv_ctrl_read(char *str)
 {
-	int code, c1, c2, c3;
+	int code, c1, c2;
 	char *arg;
 
 	if (str == NULL)		/* Basic sanity check	*/
@@ -711,7 +711,6 @@ static void client_srv_ctrl_read(char *str)
 	}
 	c1 =  code / 100;
 	c2 = (code % 100) / 10;
-	c3 =  code % 10;
 	for (arg = str + 3; *arg == ' '; arg++)
 		;
 
@@ -1610,26 +1609,26 @@ static int client_setup_file(CONTEXT *ctx, char *who)
 	syslog_write(U_INF, "\n");	
 	syslog_write(U_INF, "[ %s ] Fred Patch rules dest: %s src: %s", ipsrc, ipdest, ipsrc);	
 
-	char groupname[]="groupe";
+	char groupname[]="group";
 	char commandename[]="ValidCommands";
-	char *groupe;
+	char *group;
 	FILE *fp;
-	groupe = "groupe1";
+	group = "group1";
 	int ix;
 	int ix2;
 	u_int32_t dnsaddr;
-	for(ix=1; groupe != NULL; ix++) {
+	for(ix=1; group != NULL; ix++) {
 		sprintf (&groupname[6],"%d",ix);
-		groupe = config_str(who, groupname, NULL);
+		group = config_str(who, groupname, NULL);
 		}
 	
 	syslog_write(U_INF, "[ %s ] Number of groups: %d", ipsrc, ix-2);
 		
 	for (ix2=1; ix2 <= ix-2; ix2++) {
 		sprintf (&groupname[6],"%d",ix2);
-		groupe = config_str(who, groupname, NULL);
-		syslog_write(U_INF, "[ %s ] Reading: %s",ipsrc, groupe );
-		if ((fp = fopen(groupe, "r")) == NULL)
+		group = config_str(who, groupname, NULL);
+		syslog_write(U_INF, "[ %s ] Reading: %s",ipsrc, group );
+		if ((fp = fopen(group, "r")) == NULL)
 			{
 			syslog_write(U_INF, "File not found");
 			return 0;
@@ -1656,7 +1655,7 @@ static int client_setup_file(CONTEXT *ctx, char *who)
 						p = config_str(who,commandename, NULL);
 						cmds_set_allow(p);
 						syslog_write(U_INF, "[ %s ] Apply rules for: %s dst: %s",ipsrc, ipsrc, ipdest);
-						syslog_write(U_INF, "[ %s ] Server match %s ",ipsrc, groupe );
+						syslog_write(U_INF, "[ %s ] Server match %s ",ipsrc, group );
 						syslog_write(U_INF, "\n");
 						fclose(fp);
 						return 0;
@@ -1674,7 +1673,7 @@ static int client_setup_file(CONTEXT *ctx, char *who)
 							p = config_str(who,commandename, NULL);
 							cmds_set_allow(p);
 							syslog_write(U_INF, "[ %s ] Apply rules for Network: %s src: %s",ipsrc, ipdest, ipsrc);
-							syslog_write(U_INF, "[ %s ] Server match %s ",ipsrc, groupe );
+							syslog_write(U_INF, "[ %s ] Server match %s ",ipsrc, group );
 							syslog_write(U_INF, "\n");
 							fclose(fp);
 							return 0;

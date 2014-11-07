@@ -15,6 +15,12 @@ you can simply execute the following steps:
   su
   make install
 
+# Fred version with ldap search and filtering 
+
+./configure --prefix=/usr --exec-prefix=/usr --sysconfdir=/etc --with-libldap=/usr/lib/i386-linux-gnu/libldap-2.4.so.2 CFLAGS='-DLDAP_DEPRECATED'
+
+--with-libldap=PATHTOLIBLDAPDEV
+
 and to install additional documentation:
 
   make install.doc

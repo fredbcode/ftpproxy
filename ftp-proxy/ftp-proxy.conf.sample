@@ -455,6 +455,52 @@
 #
 # WelcomeString		Welcome to %h
 
+##### Timeout from user
+
+# TimeOut 150
+
+#############################
+##### Rules
+#############################################
+### IP/networks/domains list 
+
+### Sample group1 : A List of allowed destinations
+
+# group1 /etc/proxy-suite/group1
+
+### Sample group2 : A List of banned destinations
+
+# group2 /etc/proxy-suite/group2
+
+##### valid commands group1
+
+# ValidCommands1 ABOR PASS PASV STOR MODE QUIT PORT SYST LIST REST PWD TYPE CWD DELE
+
+##### valid commands group2
+
+# ValidCommands2 QUIT
+
+##### 
+
+# defaultrules ABOR PASS PASV STOR MODE QUIT SYST
+###########################################
+
+# See ftp-proxy documentation
+
+# LDAPAuthPWType {crypt}7,
+# LDAPBaseDN ou=People,dc=ldap,dc=kiakode
+# LDAPBindDN uid=%s,ou=People,dc=ldap,dc=kiakode
+# LDAPIdentifieruid
+# LDAPServer 192.x.x.x:389
+# UserAuthType ldap
+
+# Check if user is group5 or group6 menber 
+
+# BASE dc=ldap,dc=kiakode
+
+# FILTER (&(|(cn=group5)(cn=group6))(uniqueMember=uid=
+# or group5 only
+# FITER (&(cn=group5)(uniquemember=uid=
 
 ############################################################
 # $Log: ftp-proxy.conf.sample,v $
