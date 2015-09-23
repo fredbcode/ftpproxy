@@ -1618,14 +1618,14 @@ static int client_setup_file(CONTEXT *ctx, char *who)
 	int ix2;
 	u_int32_t dnsaddr;
 	for(ix=1; group != NULL; ix++) {
-		sprintf (&groupname[6],"%d",ix);
+		sprintf (&groupname[5],"%d",ix);
 		group = config_str(who, groupname, NULL);
 		}
 	
 	syslog_write(U_INF, "[ %s ] Number of groups: %d", ipsrc, ix-2);
 		
 	for (ix2=1; ix2 <= ix-2; ix2++) {
-		sprintf (&groupname[6],"%d",ix2);
+		sprintf (&groupname[5],"%d",ix2);
 		group = config_str(who, groupname, NULL);
 		syslog_write(U_INF, "[ %s ] Reading: %s",ipsrc, group );
 		if ((fp = fopen(group, "r")) == NULL)
