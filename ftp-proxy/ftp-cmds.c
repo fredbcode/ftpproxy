@@ -165,6 +165,7 @@ static CMD cmdlist[] = {
 	{ "XPWD", cmds_pthr, REST },
 	{ "XCUP", cmds_pthr, REST },
 	{ "RCMD", cmds_pthr, REST },
+	{ "FEAT", cmds_pthr, REST },    /* required for MTDM support */
 #if defined(ENABLE_SSL) /* <!-- SSL --> */
 	{ "AUTH", cmds_auth, REST },	/* Only needed for SSL	*/
 #endif /* <!-- /SSL --> */
